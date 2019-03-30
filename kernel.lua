@@ -77,6 +77,8 @@ struct ID3DXFont_vtbl
 void * memcpy( void * destptr, const void * srcptr, size_t num );
 void *malloc(size_t size);
 void free( void * ptrmem );
+void * memset( void * memptr, int val, size_t num );
+void *realloc(void *ptr, size_t newsize);
 ]]
 
 local k = {}

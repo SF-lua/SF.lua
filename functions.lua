@@ -2,12 +2,13 @@
 	Authors: FYP, imring, DonHomka.
 	Thanks BH Team for development.
 	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (ñ) 2018.
+	http://blast.hk/ (ñ) 2018-2019.
 ]]
 local ffi = require 'ffi'
 local memory = require 'memory'
 local kernel = require 'SAMPFUNCSLUA.kernel'
 require 'SAMPFUNCSLUA.structures'
+local bs = require 'SAMPFUNCSLUA.bitstream'
 
 local st_dialog, st_input, st_chat, st_samp, st_scoreboard, st_pools, st_player, st_textdraw, st_object, st_gangzone, st_text3d, st_car, st_pickup
 
@@ -47,6 +48,7 @@ local SAMP_FUNC_SEND_GIVE_DAMAGE			= 0x6770
 local SAMP_FUNC_SEND_TAKE_DAMAGE			= 0x6660
 local SAMP_FUNC_SEND_REQUEST_SPAWN			= 0x3A20
 local SAMP_FUNC_CLOSE_DIALOG				= 0x6C040
+local SAMP_FUNC_NAMECHANGE                  = 0xB290
 
 local sf = {
 	-- Limits
@@ -592,6 +594,15 @@ function sf.sampGetPlayerAnimationId(id)
 	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[id].pPlayerData.onFootData.sCurrentAnimationID end
 end
 
+function sf.sampSetLocalPlayerName(name)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local name = tostring(name)
+	assert(#name <= sf.SAMP_MAX_PLAYER_NAME, 'Limit name - '..sf.SAMP_MAX_PLAYER_NAME..'.')
+	ffi.cast('void(__thiscall *)(int this, const char *name, int len)', sf.sampGetBase() + SAMP_FUNC_NAMECHANGE)
+		(kernel.getAddressByCData(st_player) + ffi.offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
+	st_player.strLocalPlayerName = ffi.new('stdstring', name)
+end
+
 -- stInputInfo
 
 function sf.sampUnregisterChatCommand(name)
@@ -837,6 +848,28 @@ function sf.sampGetVehicleIdByCarHandle(car)
 	end
 end
 
+-- BitSteam
+
+function sf.raknetSendRpc(rpc, bs)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local rpc = ffi.new('DWORD[1]', math.floor(kernel.tonumber(rpc)))
+	local bs = ffi.new('DWORD[1]', math.floor(kernel.tonumber(bs)))
+	ffi.cast('void (__stdcall*)(void*, void*, signed int, signed int, DWORD, DWORD)', kernel.getAddressByCData(st_samp.pRakClientInterface) + 0x64)
+		(rpc, bs, 1, 9, 0, 0)
+end
+
+function sf.sampSendDeathByPlayer(id, reason)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local id = math.floor(kernel.tonumber(id))
+	local reason = math.floor(kernel.tonumber(reason))
+	local bs = bs.new()
+	bs:BitStream()
+	bs:WriteBits(ffi.new('BYTE[1]', reason), 8, true)
+	bs:WriteBits(ffi.new('WORD[1]', id), 16, true)
+	raknetSendRpc(53, kernel.getAddressByCData(bs[1]))
+	bs:FBitStream()
+end
+
 --- New functions
 
 -- stVehiclePool
@@ -919,13 +952,6 @@ return sf
 
 --[[
 Unfinished functions
-
-function sf.sampSetLocalPlayerName(name)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local name = tostring(name)
-	assert(#name > sf.SAMP_MAX_PLAYER_NAME, 'Limit name - '..sf.SAMP_MAX_PLAYER_NAME..'.')
-	st_player.strLocalPlayerName = ffi.new('stdstring', name)
-end
 
 function sf.raknetNewBitStream()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
