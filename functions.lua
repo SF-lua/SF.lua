@@ -66,7 +66,7 @@ local sampFunctions = {
 	-- stDialogInfo
 	showDialog = cast('void(__thiscall *)(void* this, WORD wID, BYTE iStyle, PCHAR szCaption, PCHAR szText, PCHAR szButton1, PCHAR szButton2, bool bSend)', samp_dll + 0x6B9C0),
 	closeDialog = cast('void(__thiscall *)(void* this, int button)', samp_dll + 0x6C040),
-	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50)
+	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50),
 
 	-- stGameInfo
 	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
@@ -89,14 +89,15 @@ local sampFunctions = {
 	disableInput = cast('void(__thiscall *)(void* this)', samp_dll + 0x658E0),
 
 	-- stTextdrawPool
-	createTextDraw = cast('void(__thiscall *)(void* this, WORD id, struct stTextDrawTransmit* transmit, PCHAR text', samp_dll + 0x1AE20),
+	createTextDraw = cast('void(__thiscall *)(void* this, WORD id, struct stTextDrawTransmit* transmit, PCHAR text)', samp_dll + 0x1AE20),
+	deleteTextDraw = cast('void(__thiscall *)(void* this, WORD id)', samp_dll + 0x1AD00),
 
 	-- stScoreboardInfo
 	enableScoreboard = cast('void (__thiscall *)(void *this)', samp_dll + 0x6AD30),
 	disableScoreboard = cast('void (__thiscall *)(void* this, bool disableCursor)', samp_dll + 0x658E0),
 
 	-- stTextLabelPool
-	createTextLabel = cast('int (__thiscall *)(stTextLabelPool* this, WORD id, PCHAR text, DWORD color, float x, float y, float z, float dist, bool ignoreWalls, WORD attachPlayerId, WORD attachCarId)', samp_dll + 0x11C0),
+	createTextLabel = cast('int (__thiscall *)(void* this, WORD id, PCHAR text, DWORD color, float x, float y, float z, float dist, bool ignoreWalls, WORD attachPlayerId, WORD attachCarId)', samp_dll + 0x11C0),
 	deleteTextLabel = cast('void(__thiscall *)(void* this, WORD id)', samp_dll + 0x12D0),
 
 	-- stChatInfo
@@ -725,6 +726,11 @@ function sf.sampTextdrawGetString(id)
 	return ''
 end
 
+function sf.sampTextdrawDelete(id)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	sampfunctions.deleteTextDraw(st_textdraw, id)
+end
+
 -- stScoreboardInfo
 
 function sf.sampToggleScoreboard(showed)
@@ -812,14 +818,6 @@ function sf.sampGetVehicleIdByCarHandle(car)
 end
 
 -- BitSteam
-
-function sf.raknetSendRpc(rpc, bs)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local rpc = ffi.new('DWORD[1]', rpc)
-	local bs = ffi.new('DWORD[1]', bs)
-	ffi.cast('void (__stdcall*)(void*, void*, signed int, signed int, DWORD, DWORD)', kernel.getAddressByCData(st_samp.pRakClientInterface) + 0x64)
-		(rpc, bs, 1, 9, 0, 0)
-end
 
 function sf.sampSendDeathByPlayer(id, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
@@ -949,5 +947,13 @@ function sf.raknetBitStreamIgnoreBits(bs, amount)
 	local bs = math.floor(kernel.tonumber(bs))
 	ffi.cast('void(__thiscall *)(BitStream* this, int numberOfBits)', sf.sampGetBase() + BITSTREAM_IGNORE)
 		(ffi.cast('BitStream*', bs), amount)
+end
+
+function sf.raknetSendRpc(rpc, bs)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local rpc = ffi.new('DWORD[1]', rpc)
+	local bs = ffi.new('DWORD[1]', bs)
+	ffi.cast('void (__stdcall*)(void*, void*, signed int, signed int, DWORD, DWORD)', memory.getuint32(kernel.getAddressByCData(st_samp.pRakClientInterface)) + 0x64)
+		(rpc, bs, 1, 9, 0, 0)
 end
 ]]
