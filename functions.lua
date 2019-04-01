@@ -2,7 +2,7 @@
 	Authors: FYP, imring, DonHomka.
 	Thanks BH Team for development.
 	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (ñ) 2018-2019.
+	http://blast.hk/ (c) 2018-2019.
 ]]
 local ffi = require 'ffi'
 local memory = require 'memory'
@@ -10,6 +10,7 @@ local kernel = require 'SAMPFUNCSLUA.kernel'
 require 'SAMPFUNCSLUA.structures'
 local bs = require 'SAMPFUNCSLUA.bitstream'
 
+local cast = ffi.cast
 local st_dialog, st_input, st_chat, st_samp, st_scoreboard, st_pools, st_player, st_textdraw, st_object, st_gangzone, st_text3d, st_car, st_pickup
 
 local SAMP_INFO								= 0x21A0F8
@@ -20,35 +21,6 @@ local SAMP_CHAT_INFO						= 0x21A0E4
 local SAMP_COLOR							= 0x216378
 local SAMP_KILL_INFO						= 0x21A0EC
 local SAMP_SCOREBOARD_INFO					= 0x21A0B4
-
-local SAMP_FUNC_TOGGLECURSOR				= 0x9BD30
-local SAMP_FUNC_CURSORUNLOCKACTORCAM		= 0x9BC10
-local SAMP_FUNC_SPAWN						= 0x3AD0
-local SAMP_FUNC_REQUEST_SPAWN				= 0x3EC0
-local SAMP_FUNC_ADDTOCHATWND				= 0x64010
-local SAMP_FUNC_SAY							= 0x57F0
-local SAMP_FUNC_SENDCMD						= 0x65C60
-local SAMP_FUNC_ADDCLIENTCMD				= 0x65AD0
-local SAMP_FUNC_ENABLE_INPUT				= 0x657E0
-local SAMP_FUNC_DISABLE_INPUT				= 0x658E0
-local SAMP_FUNC_SHOW_DIALOG					= 0x6B9C0
-local SAMP_FUNC_REQUEST_CLASS				= 0x56A0
-local SAMP_FUNC_ENABLESCOREBOARD			= 0x6AD30
-local SAMP_FUNC_DISABLESCOREBOARD			= 0x6A320
-local SAMP_FUNC_SEND_INTERIOR				= 0x5740
-local SAMP_FUNC_CREATE_3DTEXT				= 0x11C0
-local SAMP_FUNC_SEND_UNOCCUPIED_SYNC		= 0x4B30
-local SAMP_FUNC_PROCESS_CHAT				= 0x65D30
-local SAMP_FUNC_SET_ACTION					= 0x30C0
-local SAMP_FUNC_ADDDEATHMSG					= 0x66930
-local SAMP_FUNC_DELETE_3DTEXT				= 0x12D0
-local SAMP_FUNC_CREATE_TEXTDRAW				= 0x1AE20
-local SAMP_FUNC_SEND_SCM_EVENT				= 0x1A50
-local SAMP_FUNC_SEND_GIVE_DAMAGE			= 0x6770
-local SAMP_FUNC_SEND_TAKE_DAMAGE			= 0x6660
-local SAMP_FUNC_SEND_REQUEST_SPAWN			= 0x3A20
-local SAMP_FUNC_CLOSE_DIALOG				= 0x6C040
-local SAMP_FUNC_NAMECHANGE                  = 0xB290
 
 local sf = {
 	-- Limits
@@ -81,6 +53,59 @@ local sf = {
 	DIALOG_STYLE_TABLIST_HEADERS = 5
 }
 
+local samp_dll = getModuleHandle('samp.dll')
+local color_table = cast('DWORD*', samp_dll + SAMP_COLOR)
+
+local sampFunctions = {
+	-- stSAMP
+	sendSCM = cast('void(__cdecl *)(void *this, int type, WORD id, int param1, int param2)', samp_dll + 0x1A50),
+	sendGiveDmg = cast('void(__stdcall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', samp_dll + 0x6770),
+	sendTakeDmg = cast('void(__stdcall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', samp_dll + 0x6660),
+	sendReqSpwn = cast('void(__cdecl *)()', samp_dll + 0x3A20),
+
+	-- stDialogInfo
+	showDialog = cast('void(__thiscall *)(void* this, WORD wID, BYTE iStyle, PCHAR szCaption, PCHAR szText, PCHAR szButton1, PCHAR szButton2, bool bSend)', samp_dll + 0x6B9C0),
+	closeDialog = cast('void(__thiscall *)(void* this, int button)', samp_dll + 0x6C040),
+	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50)
+
+	-- stGameInfo
+	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
+	cursorUnlockActorCam = cast('void (__thiscall*)(void* this)', samp_dll + 0x9BC10),
+
+	-- stPlayerPool
+	reqSpawn = cast('void(__thiscall*)(void* this)', samp_dll + 0x3EC0),
+	spawn = cast('void(__thiscall*)(void* this)', samp_dll + 0x3AD0),
+	say = cast('void(__thiscall *)(void* this, PCHAR message)', samp_dll + 0x57F0),
+	reqClass = cast('void(__thiscall *)(void* this, int classId)', samp_dll + 0x56A0),
+	sendInt = cast('void (__thiscall *)(void* this, BYTE interiorID)', samp_dll + 0x5740),
+	forceUnocSync = cast('void (__thiscall *)(void* this, WORD id, BYTE seat)', samp_dll + 0x4B30),
+	setAction = cast('void( __thiscall*)(void* this, BYTE specialActionId)', samp_dll + 0x30C0),
+	setName = cast('void(__thiscall *)(int this, const char *name, int len)', samp_dll + 0xB290),
+
+	-- stInputInfo
+	sendCMD = cast('void(__thiscall *)(void* this, PCHAR message)', samp_dll + 0x65C60),
+	regCMD = cast('void(__thiscall *)(void* this, PCHAR command, CMDPROC function)', samp_dll + 0x65AD0),
+	enableInput = cast('void(__thiscall *)(void* this)', samp_dll + 0x6AD30),
+	disableInput = cast('void(__thiscall *)(void* this)', samp_dll + 0x658E0),
+
+	-- stTextdrawPool
+	createTextDraw = cast('void(__thiscall *)(void* this, WORD id, struct stTextDrawTransmit* transmit, PCHAR text', samp_dll + 0x1AE20),
+
+	-- stScoreboardInfo
+	enableScoreboard = cast('void (__thiscall *)(void *this)', samp_dll + 0x6AD30),
+	disableScoreboard = cast('void (__thiscall *)(void* this, bool disableCursor)', samp_dll + 0x658E0),
+
+	-- stTextLabelPool
+	createTextLabel = cast('int (__thiscall *)(stTextLabelPool* this, WORD id, PCHAR text, DWORD color, float x, float y, float z, float dist, bool ignoreWalls, WORD attachPlayerId, WORD attachCarId)', samp_dll + 0x11C0),
+	deleteTextLabel = cast('void(__thiscall *)(void* this, WORD id)', samp_dll + 0x12D0),
+
+	-- stChatInfo
+	addMessage = cast('void(__thiscall *)(void* this, int Type, PCSTR szString, PCSTR szPrefix, DWORD TextColor, DWORD PrefixColor)', samp_dll + 0x64010),
+
+	-- stKillInfo
+	sendDeathMessage = cast('void(__thiscall*)(void *this, PCHAR killer, PCHAR killed, DWORD clKiller, DWORD clKilled, BYTE reason)', samp_dll + 0x66930)
+}
+
 --- Standart functions
 
 function sf.isSampfuncsLoaded()
@@ -88,7 +113,7 @@ function sf.isSampfuncsLoaded()
 end
 
 function sf.sampGetBase()
-	return getModuleHandle('samp.dll')
+	return samp_dll
 end
 
 function sf.isSampLoaded()
@@ -217,44 +242,28 @@ end
 
 function sf.sampSetGamestate(gamestate)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local gamestate = kernel.tonumber(gamestate, 'Gamestate')
+	gamestate = tonumber(gamestate) or 0
 	st_samp.iGameState = gamestate
 end
 
 function sf.sampSendScmEvent(event, id, param1, param2)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local event = math.floor(kernel.tonumber(event))
-	local id = math.floor(kernel.tonumber(id))
-	local param1 = math.floor(kernel.tonumber(param1))
-	local param2 = math.floor(kernel.tonumber(param2))
-	ffi.cast('void(__thiscall *)(void *this, int type, WORD id, int param1, int param2)', sf.sampGetBase() + SAMP_FUNC_SEND_SCM_EVENT)
-		(st_samp, id, event, param1, param2)
+	sampFunctions.sendSCM(id, event, param1, param1)
 end
 
 function sf.sampSendGiveDamage(id, damage, weapon, bodypart)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local event = kernel.tonumber(damage)
-	local id = math.floor(kernel.tonumber(id))
-	local param1 = math.floor(kernel.tonumber(bodypart))
-	local param2 = math.floor(kernel.tonumber(weapon))
-	ffi.cast('void(__thiscall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', sf.sampGetBase() + SAMP_FUNC_SEND_GIVE_DAMAGE)
-		(id, damage, weapon, bodypart)
+	sampFunctions.sendGiveDmg(id, damage, weapon, bodypart)
 end
 
 function sf.sampSendTakeDamage(id, damage, weapon, bodypart)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local damage = kernel.tonumber(damage)
-	local id = math.floor(kernel.tonumber(id))
-	local param1 = math.floor(kernel.tonumber(bodypart))
-	local param2 = math.floor(kernel.tonumber(weapon))
-	ffi.cast('void(__thiscall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', sf.sampGetBase() + SAMP_FUNC_SEND_TAKE_DAMAGE)
-		(id, damage, weapon, bodypart)
+	sampFunctions.sendTakeDmg(id, damage, weapon, bodypart)
 end
 
 function sf.sampSendRequestSpawn()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	ffi.cast('void(__thiscall *)()', sf.sampGetBase() + SAMP_FUNC_SEND_REQUEST_SPAWN)
-		()
+	sampFunctions.sendReqSpwn()
 end
 
 -- stDialogInfo
@@ -286,14 +295,11 @@ end
 
 function sf.sampShowDialog(id, caption, text, button1, button2, style)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = kernel.tonumber(id, 'ID')
-	local style = kernel.tonumber(style, 'Style')
 	local caption = ffi.cast('PCHAR', tostring(caption))
 	local text = ffi.cast('PCHAR', tostring(text))
 	local button1 = ffi.cast('PCHAR', tostring(button1))
 	local button2 = ffi.cast('PCHAR', tostring(button2))
-	ffi.cast('void(__thiscall *)(void* this, WORD wID, BYTE iStyle, PCHAR szCaption, PCHAR szText, PCHAR szButton1, PCHAR szButton2, bool bSend)', sf.sampGetBase() + SAMP_FUNC_SHOW_DIALOG)
-		(st_dialog, id, style, caption, text, button1, button2, false)
+	sampFunctions.showDialog(st_dialog, id, style, caption, text, button1, button2, false)
 end
 
 function sf.sampGetCurrentDialogListItem()
@@ -304,25 +310,21 @@ end
 
 function sf.sampSetCurrentDialogListItem(number)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local number = kernel.tonumber(number, 'Number')
 	local list = getStructElement(sf.sampGetDialogInfoPtr(), 0x20, 4)
-	return setStructElement(list, 0x143 --[[m_nSelected]], 4, number or 0)
+	return setStructElement(list, 0x143 --[[m_nSelected]], 4, tonumber(number) or 0)
 end
 
 function sf.sampCloseCurrentDialogWithButton(button)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local button = kernel.tonumber(button)
-	ffi.cast('void(__thiscall *)(void* this, int button)', sf.sampGetBase() + SAMP_FUNC_CLOSE_DIALOG)
-		(st_dialog, button)
+	sampFunctions.closeDialog(st_dialog, button)
 end
 
 -- stGameInfo
 
 function sf.sampToggleCursor(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	kernel.boolean(showed)
-	ffi.cast('void (__thiscall*)(stGameInfo* this, int type, bool show)', sf.sampGetBase() + SAMP_FUNC_TOGGLECURSOR)(st_misc, showed and 3 or 0, showed)
-	if not showed then ffi.cast('void (__thiscall*)(void* this)', sf.sampGetBase() + SAMP_FUNC_CURSORUNLOCKACTORCAM)(st_misc) end
+	sampFunctions.showCursor(st_misc, showed == true and 3 or 0, showed)
+	if showed ~= true then sampFunctions.cursorUnlockActorCam(st_misc) end
 end
 
 function sf.sampIsCursorActive()
@@ -337,57 +339,51 @@ end
 
 function sf.sampSetCursorMode(mode)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local mode = kernel.tonumber(mode, 'Mode')
-	st_misc.iCursorMode = mode
+	st_misc.iCursorMode = tonumber(mode) or 0
 end
 
 -- stPlayerPool
 
 function sf.sampIsPlayerConnected(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	assert(id >= 0 and id < sf.SAMP_MAX_PLAYERS, 'Max IDs 1004. Current ID: '..id)
 	return st_player.iIsListed[id] == 1 or sf.sampGetLocalPlayerId() == id
 end
 
 function sf.sampGetPlayerNickname(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
 	local char
 	if sf.sampGetLocalPlayerId() == id then char = ffi.cast('PCSTR', st_player.strLocalPlayerName)
 	elseif sf.sampIsPlayerConnected(id) then char = ffi.cast('PCSTR', st_player.pRemotePlayer[id].strPlayerName) end
-	return char and ffi.string(char)
+	return char and ffi.string(char) or ''
 end
 
 function sf.sampSpawnPlayer()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	ffi.cast('void(__thiscall*)(void* this)', sf.sampGetBase() + SAMP_FUNC_REQUEST_SPAWN )
-		(st_player.pLocalPlayer)
-	ffi.cast('void(__thiscall*)(void* this)', sf.sampGetBase() + SAMP_FUNC_SPAWN )
-		(st_player.pLocalPlayer)
+	sampFunctions.reqSpawn(st_player.pLocalPlayer)
+	sampFunctions.spawn(st_player.pLocalPlayer)
 end
 
 function sf.sampSendChat(msg)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = ffi.cast('PCHAR', tostring(msg))
 	if msg:sub(1, 1) == '/' then 
-		ffi.cast('void(__thiscall *)(void* this, PCHAR message)', sf.sampGetBase() + SAMP_FUNC_SENDCMD)
-			(st_input, char)
+		sampFunctions.sendCMD(st_input, char)
 	else 
-		ffi.cast('void(__thiscall *)(void* this, PCHAR message)', sf.sampGetBase() + SAMP_FUNC_SAY)
-			(st_player.pLocalPlayer, char) 
+		sampFunctions.say(st_player.pLocalPlayer, char) 
 	end
 end
 
 function sf.sampIsPlayerNpc(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	return sf.sampIsPlayerConnected(id) and st_player.pRemotePlayer[id].iIsNPC == 1
 end
 
 function sf.sampGetPlayerScore(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	local score = 0
 	if sf.sampGetLocalPlayerId() == id then score = st_player.iLocalPlayerScore
 	elseif sf.sampIsPlayerConnected(id) then score = st_player.pRemotePlayer[id].iScore end
@@ -396,7 +392,7 @@ end
 
 function sf.sampGetPlayerPing(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	local ping = 0
 	if sf.sampGetLocalPlayerId() == id then ping = st_player.iLocalPlayerPing
 	elseif sf.sampIsPlayerConnected(id) then ping = st_player.pRemotePlayer[id].iPing end
@@ -405,38 +401,34 @@ end
 
 function sf.sampRequestClass(class)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local class = math.floor(kernel.tonumber(class))
-	ffi.cast('void(__thiscall *)(void* this, int classId)', sf.sampGetBase() + SAMP_FUNC_REQUEST_CLASS)
-		(st_player.pLocalPlayer, class)
+	class = tonumber(class) or 0
+	sampFunctions.reqClass(st_player.pLocalPlayer, class)
 end
 
 function sf.sampGetPlayerColor(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIsPlayerConnected(id) or sf.sampGetLocalPlayerId() == id then
-		local color_table = ffi.cast('DWORD*', sf.sampGetBase() + SAMP_COLOR)
 		return kernel.convertRGBAToARGB(color_table[id])
 	end
 end
 
 function sf.sampSendInteriorChange(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	ffi.cast('void (__thiscall *)(void* this, BYTE interiorID)', sf.sampGetBase() + SAMP_FUNC_SEND_INTERIOR)
-		(st_player.pLocalPlayer, id)
+	id = tonumber(id) or 0
+	sampFunctions.sendInt(st_player.pLocalPlayer, id)
 end
 
 function sf.sampForceUnoccupiedSyncSeatId(id, seat)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local seat = kernel.tonumber(seat, 'Seat')
-	ffi.cast('void (__thiscall *)(void* this, WORD id, BYTE seat)', sf.sampGetBase() + SAMP_FUNC_SEND_UNOCCUPIED_SYNC)
-		(st_player.pLocalPlayer, id, seat)
+	id = tonumber(id) or 0
+	seat = tonumber(seat) or 0
+	sampfunctions.forceUnocSync(st_player.pLocalPlayer, id, seat)
 end
 
 function sf.sampGetCharHandleBySampPlayerId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return true, playerPed
 	elseif sf.sampIsPlayerDefined(id) then
 		return true, getCharPointerHandle(kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.pGTA_Ped))
@@ -446,7 +438,7 @@ end
 
 function sf.sampGetPlayerIdByCharHandle(ped)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local ped = math.floor(kernel.tonumber(ped))
+	ped = tonumber(ped) or 0
 	if ped == playerPed then return true, sf.sampGetLocalPlayerId() end
 	for i = 0, sf.SAMP_MAX_PLAYERS - 1 do
 		local res, pped = sampGetCharHandleBySampPlayerId(i)
@@ -457,7 +449,7 @@ end
 
 function sf.sampGetPlayerArmor(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIsPlayerDefined(id) then 
 		if id == sf.sampGetLocalPlayerId() then return getCharArmour(playerPed) end
 		return st_player.pRemotePlayer[id].pPlayerData.fActorArmor 
@@ -467,7 +459,7 @@ end
 
 function sf.sampGetPlayerHealth(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIsPlayerDefined(id) then 
 		if id == sf.sampGetLocalPlayerId() then return getCharHealth(playerPed) end
 		return st_player.pRemotePlayer[id].pPlayerData.fActorHealth 
@@ -477,16 +469,14 @@ end
 
 function sf.sampSetSpecialAction(action)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local action = math.floor(kernel.tonumber(action))
+	action = tonumber(action) or 0
 	if sf.sampIsPlayerDefined(sf.sampGetLocalPlayerId()) then
-		ffi.cast('void( __thiscall*)(void* this, BYTE specialActionId)', sf.sampGetBase() + SAMP_FUNC_SET_ACTION)
-			(st_player.pLocalPlayer, action)
+		sampfunctions.setAction(st_player.pLocalPlayer, action)
 	end
 end
 
 function sf.sampGetPlayerCount(streamed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	kernel.boolean(streamed)
 	if not streamed then return st_scoreboard.iPlayersCount - 1 end
 	local players = 0
 	for i = 0, sf.SAMP_MAX_PLAYERS - 1 do
@@ -502,7 +492,6 @@ end
 
 function sf.sampGetMaxPlayerId(streamed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	kernel.boolean(streamed)
 	local mid = sf.sampGetLocalPlayerId()
 	for i = 0, sf.SAMP_MAX_PLAYERS - 1 do
 		if i ~= sf.sampGetLocalPlayerId() then
@@ -519,15 +508,15 @@ end
 
 function sf.sampGetPlayerSpecialAction(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[i].pPlayerData.byteSpecialAction end
 	return -1
 end
 
 function sf.sampStorePlayerOnfootData(id, data)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local data = math.floor(kernel.tonumber(data))
+	id = tonumber(id) or 0
+	data = tonumber(data) or 0
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.onFootData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.onFootData end
@@ -536,15 +525,15 @@ end
 
 function sf.sampIsPlayerPaused(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return false end
 	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[id].pPlayerData.iAFKState == 0 end
 end
 
 function sf.sampStorePlayerIncarData(id, data)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local data = math.floor(kernel.tonumber(data))
+	id = tonumber(id) or 0
+	data = tonumber(data) or 0
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.inCarData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.inCarData end
@@ -553,8 +542,8 @@ end
 
 function sf.sampStorePlayerPassengerData(id, data)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local data = math.floor(kernel.tonumber(data))
+	id = tonumber(id) or 0
+	data = tonumber(data) or 0
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.passengerData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.passengerData end
@@ -563,8 +552,8 @@ end
 
 function sf.sampStorePlayerTrailerData(id, data)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local data = math.floor(kernel.tonumber(data))
+	id = tonumber(id) or 0
+	data = tonumber(data) or 0
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.trailerData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.trailerData end
@@ -573,8 +562,8 @@ end
 
 function sf.sampStorePlayerAimData(id, data)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local data = math.floor(kernel.tonumber(data))
+	id = tonumber(id) or 0
+	data = tonumber(data) or 0
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.aimData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.aimData end
@@ -583,13 +572,12 @@ end
 
 function sf.sampSendSpawn()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	ffi.cast('void(__thiscall*)(void* this)', sf.sampGetBase() + SAMP_FUNC_SPAWN )
-		(st_player.pLocalPlayer)
+	sampfunctions.spawn(st_player.pLocalPlayer)
 end
 
 function sf.sampGetPlayerAnimationId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return st_player.pLocalPlayer.sCurrentAnimID end
 	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[id].pPlayerData.onFootData.sCurrentAnimationID end
 end
@@ -598,9 +586,7 @@ function sf.sampSetLocalPlayerName(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local name = tostring(name)
 	assert(#name <= sf.SAMP_MAX_PLAYER_NAME, 'Limit name - '..sf.SAMP_MAX_PLAYER_NAME..'.')
-	ffi.cast('void(__thiscall *)(int this, const char *name, int len)', sf.sampGetBase() + SAMP_FUNC_NAMECHANGE)
-		(kernel.getAddressByCData(st_player) + ffi.offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
-	st_player.strLocalPlayerName = ffi.new('stdstring', name)
+	sampfunctions.setName(kernel.getAddressByCData(st_player) + ffi.offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
 end
 
 -- stInputInfo
@@ -626,12 +612,10 @@ function sf.sampRegisterChatCommand(name, function_)
 	assert(#name < 30, 'Command name "'..tostring(name)..'" was too long.')
 	sf.sampUnregisterChatCommand(name)
 	local char = ffi.cast('PCHAR', name)
-	local func = ffi.new('CMDPROC', function()
-		local buffer = ffi.string(st_input.szRecallBufffer[0]):match('^/'..name..'%s+(.*)')
-		function_(buffer or '')
+	local func = ffi.new('CMDPROC', function(args)
+		function_(ffi.string(args))
 	end)
-	ffi.cast('void(__thiscall *)(void* this, PCHAR command, CMDPROC function)', sf.sampGetBase() + SAMP_FUNC_ADDCLIENTCMD)
-		(st_input, char, func)
+	sampfunctions.regCMD(st_input, char, func)
 	return true
 end
 
@@ -647,9 +631,7 @@ end
 
 function sf.sampSetChatInputEnabled(enabled)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	kernel.boolean(enabled)
-	ffi.cast('void(__thiscall *)(void* this)', sf.sampGetBase() + (enabled and SAMP_FUNC_ENABLE_INPUT or SAMP_FUNC_DISABLE_INPUT))
-		(st_input)
+	sampfunctions[enabled and 'enableInput' or 'disableInput'](st_input)
 end
 
 function sf.sampIsChatInputActive()
@@ -659,8 +641,9 @@ end
 
 function sf.sampIsChatCommandDefined(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	name = tostring(name)
 	for i = 0, sf.SAMP_MAX_CLIENTCMDS - 1 do
-		if ffi.string(st_input.szCMDNames[i]) == tostring(name) then return true end
+		if ffi.string(st_input.szCMDNames[i]) == name then return true end
 	end
 	return false
 end
@@ -668,8 +651,7 @@ end
 function sf.sampProcessChatInput(text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = ffi.cast('PCHAR', tostring(text))
-	ffi.cast('void(__thiscall *)(void* this, PCHAR message)', sf.sampGetBase() + SAMP_FUNC_SAY)
-		(st_player.pLocalPlayer, char)
+	sampfunctions.say(st_player.pLocalPlayer, char)
 end
 
 -- stChatInfo
@@ -686,19 +668,19 @@ end
 
 function sf.sampSetChatDisplayMode(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	st_chat.iChatWindowMode = id
 end
 
 function sf.sampGetChatString(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	return ffi.string(st_chat.chatEntry[id].szText), ffi.string(st_chat.chatEntry[id].szPrefix), st_chat.chatEntry[id].clTextColor, st_chat.chatEntry[id].clPrefixColor
 end
 
 function sf.sampSetChatString(id, text, prefix, color_t, color_p)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	st_chat.chatEntry[id].szText = ffi.new('char[144]', tostring(text))
 	st_chat.chatEntry[id].szPrefix = ffi.new('char[28]', tostring(prefix))
 	st_chat.chatEntry[id].clTextColor = color_t
@@ -709,27 +691,19 @@ end
 
 function sf.sampTextdrawIsExists(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	return id < sf.SAMP_MAX_TEXTDRAWS and st_textdraw.iIsListed[id] == 1 or st_textdraw.iPlayerTextDraw[id - sf.SAMP_MAX_TEXTDRAWS] == 1
 end
 
 function sf.sampTextdrawCreate(id, text, x, y)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local x = kernel.tonumber(x)
-	local y = kernel.tonumber(y)
 	local transmit = ffi.new('stTextDrawTransmit[1]', { { fX = x, fY = y } })
-	ffi.cast('void(__thiscall *)(void* this, WORD id, struct stTextDrawTransmit* transmit, PCHAR text', sf.sampGetBase() + SAMP_FUNCS_CREATE_TEXTDRAW)
-		(st_textdraw, transmit, ffi.cast('PCHAR', tostring(text)))
+	sampfunctions.createTextDraw(st_textdraw, transmit, ffi.cast('PCHAR', tostring(text)))
 end
 
 function sf.sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local box = kernel.tonumber(box)
-	local color = math.floor(kernel.tonumber(color))
-	local sizeY = kernel.tonumber(sizeY)
-	local sizeX = kernel.tonumber(sizeX)
+	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
 		local struct = id > sf.SAMP_MAX_TEXTDRAWS and st_textdraw.playerTextdraw[id] or st_textdraw.textdraw[id]
 		struct.byteBox = box
@@ -743,13 +717,10 @@ end
 
 function sf.sampToggleScoreboard(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	kernel.boolean(showed)
 	if showed then 
-		ffi.cast('void (__thiscall *)(void *this)', sf.sampGetBase() + SAMP_FUNC_ENABLESCOREBOARD)
-			(st_scoreboard)
+		sampfunctions.enableScoreboard(st_scoreboard)
 	else 
-		ffi.cast('void (__thiscall *)(void* this, bool disableCursor)', sf.sampGetBase() + SAMP_FUNC_DISABLESCOREBOARD)
-			(st_scoreboard, true)
+		sampfunctions.disableScoreboard(st_scoreboard, true)
 	end
 end
 
@@ -762,19 +733,10 @@ end
 
 function sf.sampCreate3dText(text, color, x, y, z, dist, i_walls, id, vid)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local vid = math.floor(kernel.tonumber(vid))
-	local x = kernel.tonumber(x)
-	local y = kernel.tonumber(y)
-	local z = kernel.tonumber(z)
-	local dist = kernel.tonumber(dist)
-	kernel.boolean(i_walls)
 	local text = ffi.cast('PCHAR', tostring(text))
-	local color = ffi.cast('DWORD', color)
 	for i = 0, #sf.SAMP_MAX_3DTEXTS - 1 do
 		if not sf.sampIs3dTextDefined(i) then
-			ffi.cast('int (__thiscall *)(stTextLabelPool* this, WORD id, PCHAR text, DWORD color, float x, float y, float z, float dist, bool ignoreWalls, WORD attachPlayerId, WORD attachCarId)', sf.sampGetBase() + SAMP_FUNC_CREATE_3DTEXT)
-				(st_text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
+			sampfunctions.createTextLabel(st_text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
 			return i
 		end
 	end
@@ -783,13 +745,13 @@ end
 
 function sf.sampIs3dTextDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	return st_text3d.iIsListed[id] == 1
 end
 
 function sf.sampGet3dTextInfoById(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
 		local t = st_text3d.textLabel[id]
 		return ffi.string(t.pText), t.color, t.fPosition[0], t.fPosition[1], t.fPosition[2], t.fMaxViewDistance, t.byteShowBehindWalls == 1, t.sAttachedToPlayerID, t.sAttachedToVehicleID
@@ -798,50 +760,39 @@ end
 
 function sf.sampSet3dTextString(id, text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		t.pText = ffi.cast('PCHAR', tostring(text))
+		st_text3d.textLabel[id].pText = ffi.cast('PCHAR', tostring(text))
 	end
 end
 
 function sf.sampDestroy3dText(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		ffi.cast('void(__thiscall *)(void* this, WORD id)', sf.sampGetBase() + SAMP_FUNC_DELETE_3DTEXT)
-			(st_text3d, id)
+		sampfunctions.deleteTextLabel(st_text3d, id)
 	end
 end
 
 function sf.sampCreate3dTextEx(i, text, color, x, y, z, dist, i_walls, id, vid)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local i = math.floor(kernel.tonumber(i))
-	local id = math.floor(kernel.tonumber(id))
-	local vid = math.floor(kernel.tonumber(vid))
-	local x = kernel.tonumber(x)
-	local y = kernel.tonumber(y)
-	local z = kernel.tonumber(z)
-	local dist = kernel.tonumber(dist)
-	kernel.boolean(i_walls)
 	if sf.sampIs3dTextDefined(i) then sf.sampDestroy3dText(i) end
 	local text = ffi.cast('PCHAR', tostring(text))
-	local color = ffi.cast('DWORD', color)
-	ffi.cast('int (__thiscall *)(void* this, WORD id, PCHAR text, DWORD color, float x, float y, float z, float dist, bool ignoreWalls, WORD attachPlayerId, WORD attachCarId)', sf.sampGetBase() + SAMP_FUNC_CREATE_3DTEXT)
-		(st_text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
+	sampfunctions.createTextLabel(st_text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
 end
 
 -- stVehiclePool
 
 function sf.sampGetCarHandleBySampVehicleId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if sf.sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(kernel.getAddressByCData(st_car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
 	return false, -1
 end
 
 function sf.sampGetVehicleIdByCarHandle(car)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local car = math.floor(kernel.tonumber(car))
+	car = tonumber(car) or 0
 	for i = 0, sf.SAMP_MAX_VEHICLES - 1 do
 		local res, ccar = sf.sampGetCarHandleBySampVehicleId(i)
 		if res and ccar == car then return true, i end
@@ -852,16 +803,14 @@ end
 
 function sf.raknetSendRpc(rpc, bs)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local rpc = ffi.new('DWORD[1]', math.floor(kernel.tonumber(rpc)))
-	local bs = ffi.new('DWORD[1]', math.floor(kernel.tonumber(bs)))
+	local rpc = ffi.new('DWORD[1]', rpc)
+	local bs = ffi.new('DWORD[1]', bs)
 	ffi.cast('void (__stdcall*)(void*, void*, signed int, signed int, DWORD, DWORD)', kernel.getAddressByCData(st_samp.pRakClientInterface) + 0x64)
 		(rpc, bs, 1, 9, 0, 0)
 end
 
 function sf.sampSendDeathByPlayer(id, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
-	local reason = math.floor(kernel.tonumber(reason))
 	local bs = bs.new()
 	bs:BitStream()
 	bs:WriteBits(ffi.new('BYTE[1]', reason), 8, true)
@@ -876,7 +825,7 @@ end
 
 function sf.sampIsVehicleDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	return st_car.iIsListed[id] == 1 and kernel.getAddressByCData(st_car.pSAMP_Vehicle[id]) and kernel.getAddressByCData(st_car.pSAMP_Vehicle[id].pGTA_Vehicle)
 end
 
@@ -884,7 +833,7 @@ end
 
 function sf.sampIsPlayerDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(st_player.pLocalPlayer) > 0 end
 	return sf.sampIsPlayerConnected(id) and kernel.getAddressByCData(st_player.pRemotePlayer[id]) > 0 and kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData) > 0 and
 	kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor) > 0 and kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.actor_info) > 0
@@ -902,9 +851,8 @@ end
 
 function sf.sampSetPlayerColor(id, color)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id)
 	if sf.sampIsPlayerConnected(id) or sf.sampGetLocalPlayerId() == id then
-		local color_table = ffi.cast('DWORD*', sf.sampGetBase() + SAMP_COLOR)
 		color_table[id] = kernel.convertARGBToRGBA(color)
 	end
 end
@@ -919,20 +867,16 @@ end
 
 function sf.sampAddChatMessageEx(_type, text, prefix, textColor, prefixColor)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local _type = math.floor(kernel.tonumber(_type))
 	local char = ffi.cast('PCSTR', tostring(text))
 	local charPrefix = prefix and ffi.cast('PCSTR', tostring(prefix))
-	local textColor = ffi.cast('DWORD', textColor)
-	local prefixColor = ffi.cast('DWORD', prefixColor)
-	ffi.cast('void(__thiscall *)(void* this, int Type, PCSTR szString, PCSTR szPrefix, DWORD TextColor, DWORD PrefixColor)', sf.sampGetBase() + SAMP_FUNC_ADDTOCHATWND )
-		(st_chat, type, char, charPrefix, textColor, prefixColor)
+	sampfunctions.addMessage(st_chat, type, char, charPrefix, textColor, prefixColor)
 end
 
 -- stPickupPool
 
 function sf.sampGetPickupModelTypeBySampId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local id = math.floor(kernel.tonumber(id))
+	id = tonumber(id) or 0
 	if st_pickup.pickup[id] then return st_pickup.pickup[id].iModelID, st_pickup.pickup[id].iType end
 	return -1, -1
 end
@@ -941,10 +885,19 @@ end
 
 function sf.sampAddDeathMessage(killer, killed, clkiller, clkilled, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local send = ffi.cast('void(__thiscall*)(void *this, PCHAR killer, PCHAR killed, DWORD clKiller, DWORD clKilled, BYTE reason)', sf.sampGetBase() + SAMP_FUNC_ADDDEATHMSG)
 	local killer = ffi.cast('PCHAR', killer)
 	local killed = ffi.cast('PCHAR', killed)
-	send(st_killinfo, killer, killed, 0xFFFFFF000000 + clkiller, 0xFFFFFF000000 + clkilled, reason)
+	sampfunctions.sendDeathMessage(st_killinfo, killer, killed, 0xFFFFFF000000 + clkiller, 0xFFFFFF000000 + clkilled, reason)
+end
+
+-- stDialogInfo
+
+function sf.sampGetDialogButtons()
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+    local dialog = st_dialog.pDialog
+    local b1p = sampfunctions.getElementSturct(dialog, 20, 0) + 0x4D
+    local b2p = sampfunctions.getElementSturct(dialog, 21, 0) + 0x4D
+    return ffi.string(b1p), ffi.string(b2p)
 end
 
 return sf
