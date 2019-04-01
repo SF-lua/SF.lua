@@ -359,7 +359,6 @@ function sf.sampGetPlayerNickname(id)
 	return char and ffi.string(char) or ''
 end
 
-
 function sf.sampSpawnPlayer()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	sampFunctions.reqSpawn(st_player.pLocalPlayer)
