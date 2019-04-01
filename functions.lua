@@ -705,12 +705,24 @@ function sf.sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
-		local struct = id > sf.SAMP_MAX_TEXTDRAWS and st_textdraw.playerTextdraw[id] or st_textdraw.textdraw[id]
+		local struct = id >= sf.SAMP_MAX_TEXTDRAWS and st_textdraw.playerTextdraw[id - sf.SAMP_MAX_TEXTDRAWS] or st_textdraw.textdraw[id]
 		struct.byteBox = box
 		struct.dwBoxColor = color
 		struct.fBoxSizeX = sizeX
 		struct.fBoxSizeY = sizeY
 	end
+end
+
+function sf.sampTextdrawGetString(id)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	id = tonumber(id) or 0
+	if sf.sampTextdrawIsExists(id) then
+		local str
+		if id >= sf.SAMP_MAX_TEXTDRAWS then str = st_textdraw.playerTextdraw[id - sf.SAMP_MAX_TEXTDRAWS].szText
+		else str = st_textdraw.textdraw[id - sf.SAMP_MAX_TEXTDRAWS].szText end
+		return ffi.string(str)
+	end
+	return ''
 end
 
 -- stScoreboardInfo
