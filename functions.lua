@@ -5,6 +5,7 @@
 	http://blast.hk/ (c) 2018-2019.
 ]]
 local ffi = require 'ffi'
+local bit = require 'bit'
 local memory = require 'memory'
 local kernel = require 'SAMPFUNCSLUA.kernel'
 require 'SAMPFUNCSLUA.structures'
@@ -817,16 +818,173 @@ function sf.sampGetVehicleIdByCarHandle(car)
 	end
 end
 
--- BitSteam
+-- BitStream
 
 function sf.sampSendDeathByPlayer(id, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local bs = bs.new()
-	bs:BitStream()
-	bs:WriteBits(ffi.new('BYTE[1]', reason), 8, true)
-	bs:WriteBits(ffi.new('WORD[1]', id), 16, true)
-	raknetSendRpc(53, kernel.getAddressByCData(bs[1]))
-	bs:FBitStream()
+	local bitstream = bs.new()
+	bitstream:BitStream()
+	bitstream:WriteBits(ffi.new('BYTE[1]', reason), 8, true)
+	bitstream:WriteBits(ffi.new('WORD[1]', id), 16, true)
+	raknetSendRpc(53, kernel.getAddressByCData(bitstream[1]))
+	bitstream:FBitStream()
+end
+
+function sf.raknetBitStreamReadBool(bitstream)
+	bitstream = bs.new(bitstream)
+	return bs:ReadBit()
+end
+
+function sf.raknetBitStreamReadInt8(bitstream)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[1]')
+	bitstream:ReadBits(buf, 8, true)
+	return buf[0]
+end
+
+function sf.raknetBitStreamReadInt16(bitstream)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('int16_t[1]')
+	bitstream:ReadBits(buf, 16, true)
+	return buf[0]
+end
+
+function sf.raknetBitStreamReadInt32(bitstream)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('int32_t[1]')
+	bitstream:ReadBits(buf, 32, true)
+	return buf[0]
+end
+
+function sf.raknetBitStreamReadFloat(bitstream)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('float[1]')
+	bitstream:ReadBits(buf, 32, true)
+	return buf[0]
+end
+
+function sf.raknetBitStreamReadBuffer(bitstream, dest, size)
+	bitstream = bs.new(bitstream)
+	bitstream:ReadBits(dest, size * 8, true)
+end
+
+function sf.raknetBitStreamReadString(bitstream, size)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[?]', size)
+	bitstream:ReadBits(buf, size * 8, true)
+	return ffi.string(buf)
+end
+
+function sf.raknetBitStreamResetReadPointer(bitstream)
+	bitstream = bs.new(bitstream)
+	bitstream:ResetReadPointer()
+end
+
+function sf.raknetBitStreamResetWritePointer(bitstream)
+	bitstream = bs.new(bitstream)
+	bitstream:ResetWritePointer()
+end
+
+function sf.raknetBitStreamIgnoreBits(bitstream, amount)
+	bitstream = bs.new(bitstream)
+	bitstream:IgnoreBits(amount)
+end
+
+function sf.raknetBitStreamSetWriteOffset(bitstream, offset)
+	bitstream = bs.new(bitstream)
+	bitstream:SetWriteOffset(offset)
+end
+
+function sf.raknetBitStreamSetReadOffset(bitstream, offset)
+	bitstream = bs.new(bitstream)
+	bitstream[1].readOffset = offset
+end
+
+function sf.raknetBitStreamGetNumberOfBitsUsed(bitstream)
+	bitstream = bs.new(bitstream)
+	return bitstream[1].numberOfBitsUsed
+end
+
+function sf.raknetBitStreamGetNumberOfBytesUsed(bitstream)
+	bitstream = bs.new(bitstream)
+	return bit.rshift(bitstream[1].numberOfBitsUsed + 7, 3)
+end
+
+function sf.raknetBitStreamGetNumberOfUnreadBits(bitstream)
+	bitstream = bs.new(bitstream)
+	return bitstream[1].numberOfBitsAllocated - bitstream[1].numberOfBitsUsed
+end
+
+function sf.raknetBitStreamGetWriteOffset(bitstream)
+	bitstream = bs.new(bitstream)
+	return bitstream[1].numberOfBitsUsed
+end
+
+function sf.raknetBitStreamGetReadOffset(bitstream)
+	bitstream = bs.new(bitstream)
+	return bitstream[1].readOffset
+end
+
+function sf.raknetBitStreamGetDataPtr(bitstream)
+	bitstream = bs.new(bitstream)
+	return kernel.getAddressByCData(bitstream[1].data)
+end
+
+function sf.raknetNewBitStream()
+	local bitstream = bs.new()
+	bitstream:BitStream()
+	return kernel.getAddressByCData(bitstream[1])
+end
+
+function sf.raknetDeleteBitStream(bitstream)
+	bitstream = bs.new(bitstream)
+	bitstream:FBitStream()
+end
+
+function sf.raknetResetBitStream(bitstream)
+	bitstream = bs.new(bitstream)
+	bitstream:Reset()
+end
+
+function sf.raknetBitStreamWriteBool(bitstream, value)
+	bitstream = bs.new(bitstream)
+	if value then bitstream:Write1()
+	else bitstream:Write0() end
+end
+
+function sf.raknetBitStreamWriteInt8(bitstream, value)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[1]', value)
+	bitstream:WriteBits(buf, 8, true)
+end
+
+function sf.raknetBitStreamWriteInt16(bitstream, value)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('int16_t[1]', value)
+	bitstream:WriteBits(buf, 16, true)
+end
+
+function sf.raknetBitStreamWriteInt32(bitstream, value)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('int32_t[1]', value)
+	bitstream:WriteBits(buf, 32, true)
+end
+
+function sf.raknetBitStreamWriteFloat(bitstream, value)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('float[1]', value)
+	bitstream:WriteBits(buf, 32, true)
+end
+
+function sf.raknetBitStreamWriteBuffer(bitstream, dest, size)
+	bitstream = bs.new(bitstream)
+	bitstream:WriteBits(dest, size * 8, true)
+end
+
+function sf.raknetBitStreamWriteString(bitstream, str)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[?]', #str, str)
+	bitstream:WriteBits(buf, #str * 8, true)
 end
 
 --- New functions
@@ -915,39 +1073,6 @@ return sf
 
 --[[
 Unfinished functions
-
-function sf.raknetNewBitStream()
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local bs = ffi.new('BitStream', {})
-	return kernel.getAddressByCData(bs)
-end
-
-function sf.raknetDeleteBitStream(bs)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	ffi.cast('void(__thiscall *)(BitStream *this)', sf.sampGetBase() + BITSTREAM_FREE)
-		(ffi.cast('BitStream*', bs))
-end
-
-function sf.raknetSendRpcEx(rpc, bs, priority, reliability, channel, timestamp)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local rpc = math.floor(kernel.tonumber(rpc))
-	local bs = math.floor(kernel.tonumber(bs))
-	local priority = math.floor(kernel.tonumber(priority))
-	local reliability = math.floor(kernel.tonumber(reliability))
-	local channel = math.floor(kernel.tonumber(channel))
-	local timestamp = math.floor(kernel.tonumber(timestamp))
-	local pointer = kernel.getAddressByCData(st_samp.pRakClientInterface)
-	ffi.cast('void(__thiscall *)(int rpc, BitStream* bs, int priority, int reliability, DWORd channel, DWORD timestamp)', pointer + 0x64)
-		(rpc, ffi.cast('BitStream*', bs), priority, reliability, channel, timestamp)
-end
-
-function sf.raknetBitStreamIgnoreBits(bs, amount)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local amount = math.floor(kernel.tonumber(amount))
-	local bs = math.floor(kernel.tonumber(bs))
-	ffi.cast('void(__thiscall *)(BitStream* this, int numberOfBits)', sf.sampGetBase() + BITSTREAM_IGNORE)
-		(ffi.cast('BitStream*', bs), amount)
-end
 
 function sf.raknetSendRpc(rpc, bs)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')

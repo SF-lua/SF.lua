@@ -273,10 +273,10 @@ function BitStream.new(pointer)
 		output = ffi.cast('BYTE*', output)
 		if numberOfBitsToRead <= 0 then return false end
 
-		if bs_data.readOffset + numberOfBitsToRead > numberOfBitsUsed then return false end
+		if bs_data.readOffset + numberOfBitsToRead > bs_data.numberOfBitsUsed then return false end
 
 		local readOffsetMod8, offset = 0, 0
-		ffi.C.memset(output, 0, BITS_TO_BYTES(numberOfBitsToRead))
+		ffi.fill(output, BITS_TO_BYTES(numberOfBitsToRead), 0)
 
 		readOffsetMod8 = bit.band(bs_data.readOffset, 7)
 		while numberOfBitsToRead > 0 do
@@ -287,8 +287,8 @@ function BitStream.new(pointer)
 			numberOfBitsToRead = numberOfBitsToRead - 8
 			if numberOfBitsToRead < 0 then
 				if alignBitsToRight then (output + offset)[0] = -numberOfBitsToRead end
-				readOffset = readOffset + 8 + numberOfBitsToRead
-			else readOffset = readOffset + 8 end
+				bs_data.readOffset = bs_data.readOffset + 8 + numberOfBitsToRead
+			else bs_data.readOffset = bs_data.readOffset + 8 end
 			offset = offset + 1
 		end
 		return true
