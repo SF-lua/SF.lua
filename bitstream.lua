@@ -2,7 +2,7 @@
 	Authors: FYP, imring, DonHomka.
 	Thanks BH Team for development.
 	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (ñ) 2018-2019.
+	http://blast.hk/ (c) 2018-2019.
 
 	lite version of RakNet BitStream Copyright 2003 Kevin Jenkins.
 ]]
@@ -23,9 +23,9 @@ struct BitStream
 	int						numberOfBitsUsed;
 	int						numberOfBitsAllocated;
 	int						readOffset;
-	uint8_t*				data;
+	BYTE*					data;
 	bool					copyData;
-	uint8_t					stackData[256];
+	BYTE					stackData[256];
 } __attribute__ ((packed));
 ]]
 
@@ -39,23 +39,24 @@ function BitStream.new(pointer)
 				-- bs_data.numberOfBitsAllocated = 32 * 8,
 				bs_data.numberOfBitsAllocated = BITSTREAM_STACK_ALLOCATION_SIZE * 8
 				bs_data.readOffset = 0
-				-- bs_data.data = ffi.cast('uint8_t*', ffi.C.malloc(32)),
+				-- bs_data.data = ffi.cast('BYTE*', ffi.C.malloc(32)),
 				bs_data.copyData = true
-				bs_data.data = ffi.cast('uint8_t*', bs_data.stackData)
+				bs_data.data = ffi.cast('BYTE*', bs_data.stackData)
 			end,
 			function(initialBytesToAllocate)
 				bs_data.numberOfBitsUsed = 0
 				bs_data.readOffset = 0
 				bs_data.copyData = true
 				if initialBytesToAllocate <= BITSTREAM_STACK_ALLOCATION_SIZE then
-					bs_data.data = ffi.cast('uint8_t*', bs_data.stackData)
+					bs_data.data = ffi.cast('BYTE*', bs_data.stackData)
 					bs_data.numberOfBitsAllocated = BITSTREAM_STACK_ALLOCATION_SIZE * 8
 				else
-					bs_data.data = ffi.cast('uint8_t*', ffi.C.malloc(initialBytesToAllocate))
+					bs_data.data = ffi.cast('BYTE*', ffi.C.malloc(initialBytesToAllocate))
 					bs_data.numberOfBitsAllocated = BYTES_TO_BITS(initialBytesToAllocate)
 				end
 			end,
 			[3] = function(_data, lengthInBytes, _copyData)
+				_data = ffi.cast('BYTE*', _data)
 				bs_data.numberOfBitsUsed = BYTES_TO_BITS(lengthInBytes)
 				bs_data.readOffset = 0
 				bs_data.copyData = _copyData
@@ -63,9 +64,9 @@ function BitStream.new(pointer)
 				if bs_data.copyData then
 					if lengthInBytes > 0 then
 						if lengthInBytes < BITSTREAM_STACK_ALLOCATION_SIZE then
-							bs_data.data = ffi.cast('uint8_t*', bs_data.stackData)
+							bs_data.data = ffi.cast('BYTE*', bs_data.stackData)
 							bs_data.numberOfBitsAllocated = BYTES_TO_BITS(BITSTREAM_STACK_ALLOCATION_SIZE)
-						else bs_data.data = ffi.cast('uint8_t*', ffi.C.malloc(lengthInBytes)) end
+						else bs_data.data = ffi.cast('BYTE*', ffi.C.malloc(lengthInBytes)) end
 					end
 					ffi.C.memcpy(data, _data, lengthInBytes)
 				end
@@ -99,28 +100,32 @@ function BitStream.new(pointer)
 			function(...)
 				local funcs = {
 					function(bs)
-						if type(bs) == 'userdata' and type(bs[1]) == 'cdata' then self:Write(bs, bs:GetNumberOfBitsUsed()) end
+						bs = BitStream.new(GET_POINTER(bs))
+						self:Write(bs, bs:GetNumberOfBitsUsed())
 					end,
 					function(input, numberOfBytes)
+						input = ffi.cast('const char*', input)
 						if not numberOfBytes or numberOfBytes == 0 then return end
 						if bit.band(bs_data.numberOfBitsUsed, 7) == 0 then
 							self:AddBitsAndReallocate(BYTES_TO_BITS(numberOfBytes))
-							ffi.C.memcpy(GET_POINTER(bs_data.data) + BITS_TO_BYTES(numberOfBitsUsed), input, numberOfBytes)
+							ffi.C.memcpy(bs_data.data + BITS_TO_BYTES(numberOfBitsUsed), input, numberOfBytes)
+							bs_data.numberOfBitsUsed = bs_data.numberOfBitsUsed + BYTES_TO_BITS(numberOfBytes)
 						else self:WriteBits(input, numberOfBytes * 8, true) end
 					end,
 					function(bitStream, numberOfBits)
+						local bsdata = bitStream[1]
 						self:AddBitsAndReallocate(numberOfBits)
 						local numberOfBitsMod8 = 0
-						while bs_data.numberOfBits - 1 > 0 and bitStream.readOffset + 1 <= bitStream.numberOfBitsUsed do
+						while bs_data.numberOfBits - 1 > 0 and bsdata.readOffset + 1 <= bsdata.numberOfBitsUsed do
 							numberOfBitsMod8 = bit.band(numberOfBitsUsed, 7)
 							if numberOfBitsMod8 == 0 then
-								if bitStream.data[bit.band(bit.rshift(bitStream.readOffset, 3), bit.rshift(0x80, bitStream.readOffset + 1 % 8))] then
-									bs_data.data[bit.rshift(bitStream.readOffset, 3)] = 0x80
+								if bsdata.data[bit.band(bit.rshift(bsdata.readOffset, 3), bit.rshift(0x80, bsdata.readOffset + 1 % 8))] then
+									bs_data.data[bit.rshift(bsdata.readOffset, 3)] = 0x80
 								else
-									bs_data.data[bit.rshift(bitStream.readOffset, 3)] = 0
+									bs_data.data[bit.rshift(bsdata.readOffset, 3)] = 0
 								end
 							else
-								if bitStream.data[bit.band(bit.rshift(bitStream.readOffset, 3), bit.rshift(0x80, bitStream.readOffset + 1 % 8))] then
+								if bsdata.data[bit.band(bit.rshift(bsdata.readOffset, 3), bit.rshift(0x80, bsdata.readOffset + 1 % 8))] then
 									bs_data.data[bit.rshift(bs_data.readOffset, 3)] = bit.bor(bs_data.data[bit.rshift(bs_data.readOffset, 3)], bit.rshift(0x80, numberOfBitsMod8))
 								end
 							end
@@ -135,9 +140,10 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:Read(output, numberOfBytes)
+		output = ffi.cast('char*', output)
 		if bit.band(bs_data.readOffset, 7) == 0 then
 			if bs_data.readOffset + BYTES_TO_BITS(numberOfBytes) > bs_data.numberOfBitsUsed then return false end
-			ffi.C.memcpy(output, GET_POINTER(bs_data.data) + bit.rshift(bs_data.readOffset, 3), numberOfBytes)
+			ffi.C.memcpy(output, bs_data.data + bit.rshift(bs_data.readOffset, 3), numberOfBytes)
 			bs_data.readOffset = bs_data.readOffset + BYTES_TO_BITS(numberOfBytes)
 		else
 			return self:ReadBits(output, numberOfBytes * 8)
@@ -171,7 +177,8 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:ReadBit()
-		return bit.band(bs_data.data[bit.rshift(bs_data.numberOfBitsUsed, 3)], bit.rshift(0x80, bit.band(bs_data.readOffset + 1, 7))) ~= 0
+		bs_data.readOffset = bs_data.readOffset + 1
+		return bit.band(bs_data.data[bit.rshift(bs_data.readOffset - 1, 3)], bit.rshift(0x80, bit.band(bs_data.readOffset + 1, 7))) ~= 0
 	end
 
 	function bitstream:WriteAlignedBytes(input, numberOfBytesToWrite)
@@ -180,22 +187,24 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:ReadAlignedBytes(output, numberOfBytesToRead)
+		output = ffi.cast('BYTE*', output)
 		if numberOfBytesToRead <= 0 then return false end
 		self:AlignReadToByteBoundary()
 		if readOffset + BYTES_TO_BITS(numberOfBytesToRead) > bs_data.numberOfBitsUsed then return false end
-		ffi.C.memcpy(output, GET_POINTER(bs_data.data) + bit.rshift(bs_data.readOffset, 3), numberOfBytesToRead)
+		ffi.C.memcpy(output, bs_data.data + bit.rshift(bs_data.readOffset, 3), numberOfBytesToRead)
 		bs_data.readOffset = bs_data.readOffset + BYTES_TO_BITS(numberOfBytesToRead)
 	end
 
 	function bitstream:AlignWriteToByteBoundary()
-		if bs_data.numberOfBitsUsed > 0 then bs_data.numberOfBitsUsed = bs_data.numberOfBitsUsed + ( 8 - bit.band(numberOfBitsUsed - 1, 7) + 1 ) end
+		if bs_data.numberOfBitsUsed ~= 0 then bs_data.numberOfBitsUsed = bs_data.numberOfBitsUsed + ( 8 - bit.band(numberOfBitsUsed - 1, 7) + 1 ) end
 	end
 
 	function bitstream:AlignReadToByteBoundary()
-		if bs_data.readOffset > 0 then bs_data.readOffset = bs_data.readOffset + ( 8 - bit.band(numberOfBitsUsed - 1, 7) + 1 ) end
+		if bs_data.readOffset ~= 0 then bs_data.readOffset = bs_data.readOffset + ( 8 - bit.band(numberOfBitsUsed - 1, 7) + 1 ) end
 	end
 
 	function bitstream:WriteBits(input, numberOfBitsToWrite, rightAlignedBits)
+		input = ffi.cast('BYTE*', input)
 		if numberOfBitsToWrite <= 0 then return end
 
 		self:AddBitsAndReallocate(numberOfBitsToWrite)
@@ -206,7 +215,7 @@ function BitStream.new(pointer)
 		numberOfBitsUsedMod8 = bit.band(bs_data.numberOfBitsUsed, 7)
 
 		while numberOfBitsToWrite > 0 do
-			dataByte = ffi.cast('BYTE*', GET_POINTER(input) + offset)[0]
+			dataByte = (input + offset)[0]
 
 			if numberOfBitsToWrite < 8 and rightAlignedBits then
 				dataByte = bit.lshift(dataByte, 8 - numberOfBitsToWrite)
@@ -232,12 +241,12 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:SetData(input)
-		bs_data.data = ffi.cast('uint8_t*', input)
+		bs_data.data = ffi.cast('BYTE*', input)
 		bs_data.copyData = false
 	end
 
 	function bitstream:WriteCompressed(input, size, unsignedData)
-		input = ffi.cast('uint8_t*', input)
+		input = ffi.cast('BYTE*', input)
 		local currentByte = bit.rshift(size, 3) - 1
 		local byteMatch = 0
 		if not unsignedData then byteMatch = 0xFF end
@@ -250,8 +259,8 @@ function BitStream.new(pointer)
 			end
 			currentByte = currentByte - 1
 		end
-		if ( unsignedData and bit.band(GET_POINTER(input) + currentByte, 0xF0) == 0x0 ) or 
-			( unsignedData == false and bit.band(GET_POINTER(input) + currentByte, 0xF0) == 0xF0 ) then
+		if ( unsignedData and bit.band(input + currentByte, 0xF0) == 0x0 ) or 
+			( unsignedData == false and bit.band(input + currentByte, 0xF0) == 0xF0 ) then
 			self:Write(true)
 			self:WriteBits(input + currentByte, 4, true)
 		else
@@ -261,6 +270,7 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:ReadBits(output, numberOfBitsToRead, alignBitsToRight)
+		output = ffi.cast('BYTE*', output)
 		if numberOfBitsToRead <= 0 then return false end
 
 		if bs_data.readOffset + numberOfBitsToRead > numberOfBitsUsed then return false end
@@ -285,6 +295,7 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:ReadCompressed(output, size, unsignedData)
+		output = ffi.cast('BYTE*', output)
 		local currentByte = BYTES_TO_BITS(size) - 1
 
 		local byteMatch, halfByteMatch = 0, 0
@@ -353,6 +364,7 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:CopyData(_data)
+		_data = ffi.cast('BYTE**', _data)
 		_data[0] = ffi.new('uint8_t[?]', BITS_TO_BYTES( bs_data.numberOfBitsUsed ))
 		ffi.C.memcpy(_data[0], bs_data.data, ffi.sizeof('uint8_t') * BITS_TO_BYTES( numberOfBitsUsed ))
 		return numberOfBitsUsed
@@ -380,6 +392,8 @@ function BitStream.new(pointer)
 	end
 
 	function bitstream:ReverseBytes(input, output, length)
+		input = ffi.cast('BYTE*', input)
+		output = ffi.cast('BYTE*', output)
 		for i = 0, length do
 			output[i] = input[length-i-1]
 		end
