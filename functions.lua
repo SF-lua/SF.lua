@@ -105,7 +105,11 @@ local sampFunctions = {
 	addMessage = cast('void(__thiscall *)(void* this, int Type, PCSTR szString, PCSTR szPrefix, DWORD TextColor, DWORD PrefixColor)', samp_dll + 0x64010),
 
 	-- stKillInfo
-	sendDeathMessage = cast('void(__thiscall*)(void *this, PCHAR killer, PCHAR killed, DWORD clKiller, DWORD clKilled, BYTE reason)', samp_dll + 0x66930)
+	sendDeathMessage = cast('void(__thiscall*)(void *this, PCHAR killer, PCHAR killed, DWORD clKiller, DWORD clKilled, BYTE reason)', samp_dll + 0x66930),
+
+	-- BitStream
+	readDecodeString = cast('void (__thiscall*)(void* this, char* buf, size_t size_buf, BitStream* bs, int unk)', samp_dll + 0x507E0),
+	writeEncodeString = cast('void (__thiscall*)(void* this, const char* str, size_t size_str, BitStream* bs, int unk)', samp_dll + 0x506B0)
 }
 
 --- Standart functions
@@ -425,7 +429,7 @@ function sf.sampForceUnoccupiedSyncSeatId(id, seat)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	seat = tonumber(seat) or 0
-	sampfunctions.forceUnocSync(st_player.pLocalPlayer, id, seat)
+	sampFunctions.forceUnocSync(st_player.pLocalPlayer, id, seat)
 end
 
 function sf.sampGetCharHandleBySampPlayerId(id)
@@ -473,7 +477,7 @@ function sf.sampSetSpecialAction(action)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	action = tonumber(action) or 0
 	if sf.sampIsPlayerDefined(sf.sampGetLocalPlayerId()) then
-		sampfunctions.setAction(st_player.pLocalPlayer, action)
+		sampFunctions.setAction(st_player.pLocalPlayer, action)
 	end
 end
 
@@ -574,7 +578,7 @@ end
 
 function sf.sampSendSpawn()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampfunctions.spawn(st_player.pLocalPlayer)
+	sampFunctions.spawn(st_player.pLocalPlayer)
 end
 
 function sf.sampGetPlayerAnimationId(id)
@@ -588,7 +592,7 @@ function sf.sampSetLocalPlayerName(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local name = tostring(name)
 	assert(#name <= sf.SAMP_MAX_PLAYER_NAME, 'Limit name - '..sf.SAMP_MAX_PLAYER_NAME..'.')
-	sampfunctions.setName(kernel.getAddressByCData(st_player) + ffi.offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
+	sampFunctions.setName(kernel.getAddressByCData(st_player) + ffi.offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
 end
 
 -- stInputInfo
@@ -617,7 +621,7 @@ function sf.sampRegisterChatCommand(name, function_)
 	local func = ffi.new('CMDPROC', function(args)
 		function_(ffi.string(args))
 	end)
-	sampfunctions.regCMD(st_input, char, func)
+	sampFunctions.regCMD(st_input, char, func)
 	return true
 end
 
@@ -633,7 +637,7 @@ end
 
 function sf.sampSetChatInputEnabled(enabled)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampfunctions[enabled and 'enableInput' or 'disableInput'](st_input)
+	sampFunctions[enabled and 'enableInput' or 'disableInput'](st_input)
 end
 
 function sf.sampIsChatInputActive()
@@ -653,7 +657,7 @@ end
 function sf.sampProcessChatInput(text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = ffi.cast('PCHAR', tostring(text))
-	sampfunctions.say(st_player.pLocalPlayer, char)
+	sampFunctions.say(st_player.pLocalPlayer, char)
 end
 
 -- stChatInfo
@@ -689,6 +693,11 @@ function sf.sampSetChatString(id, text, prefix, color_t, color_p)
 	st_chat.chatEntry[id].clPrefixColor = color_p
 end
 
+function sf.sampIsChatVisible()
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	return sf.sampGetChatDisplayMode() > 0
+end
+
 -- stTextdrawPool
 
 function sf.sampTextdrawIsExists(id)
@@ -700,7 +709,7 @@ end
 function sf.sampTextdrawCreate(id, text, x, y)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local transmit = ffi.new('stTextDrawTransmit[1]', { { fX = x, fY = y } })
-	sampfunctions.createTextDraw(st_textdraw, transmit, ffi.cast('PCHAR', tostring(text)))
+	sampFunctions.createTextDraw(st_textdraw, transmit, ffi.cast('PCHAR', tostring(text)))
 end
 
 function sf.sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
@@ -729,7 +738,7 @@ end
 
 function sf.sampTextdrawDelete(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampfunctions.deleteTextDraw(st_textdraw, id)
+	sampFunctions.deleteTextDraw(st_textdraw, id)
 end
 
 -- stScoreboardInfo
@@ -737,9 +746,9 @@ end
 function sf.sampToggleScoreboard(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	if showed then 
-		sampfunctions.enableScoreboard(st_scoreboard)
+		sampFunctions.enableScoreboard(st_scoreboard)
 	else 
-		sampfunctions.disableScoreboard(st_scoreboard, true)
+		sampFunctions.disableScoreboard(st_scoreboard, true)
 	end
 end
 
@@ -755,7 +764,7 @@ function sf.sampCreate3dText(text, color, x, y, z, dist, i_walls, id, vid)
 	local text = ffi.cast('PCHAR', tostring(text))
 	for i = 0, #sf.SAMP_MAX_3DTEXTS - 1 do
 		if not sf.sampIs3dTextDefined(i) then
-			sampfunctions.createTextLabel(st_text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
+			sampFunctions.createTextLabel(st_text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
 			return i
 		end
 	end
@@ -789,7 +798,7 @@ function sf.sampDestroy3dText(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		sampfunctions.deleteTextLabel(st_text3d, id)
+		sampFunctions.deleteTextLabel(st_text3d, id)
 	end
 end
 
@@ -797,7 +806,7 @@ function sf.sampCreate3dTextEx(i, text, color, x, y, z, dist, i_walls, id, vid)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	if sf.sampIs3dTextDefined(i) then sf.sampDestroy3dText(i) end
 	local text = ffi.cast('PCHAR', tostring(text))
-	sampfunctions.createTextLabel(st_text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
+	sampFunctions.createTextLabel(st_text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
 end
 
 -- stVehiclePool
@@ -987,6 +996,21 @@ function sf.raknetBitStreamWriteString(bitstream, str)
 	bitstream:WriteBits(buf, #str * 8, true)
 end
 
+function sf.raknetBitStreamDecodeString(bitstream, size)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[?]', size)
+	local this = ffi.cast('void**', samp_dll + 0x10D894)
+	sampFunctions.readDecodeString(this[0], buf, size, bitstream[1], 0)
+	return ffi.string(buf)
+end
+
+function sf.raknetBitStreamEncodeString(bitstream, str)
+	bitstream = bs.new(bitstream)
+	local buf = ffi.new('char[?]', #str, str)
+	local this = ffi.cast('void**', samp_dll + 0x10D894)
+	sampFunctions.writeEncodeString(this[0], buf, #str, bitstream[1], 0)
+end
+
 --- New functions
 
 -- stVehiclePool
@@ -1037,7 +1061,7 @@ function sf.sampAddChatMessageEx(_type, text, prefix, textColor, prefixColor)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = ffi.cast('PCSTR', tostring(text))
 	local charPrefix = prefix and ffi.cast('PCSTR', tostring(prefix))
-	sampfunctions.addMessage(st_chat, type, char, charPrefix, textColor, prefixColor)
+	sampFunctions.addMessage(st_chat, type, char, charPrefix, textColor, prefixColor)
 end
 
 -- stPickupPool
@@ -1055,7 +1079,7 @@ function sf.sampAddDeathMessage(killer, killed, clkiller, clkilled, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local killer = ffi.cast('PCHAR', killer)
 	local killed = ffi.cast('PCHAR', killed)
-	sampfunctions.sendDeathMessage(st_killinfo, killer, killed, 0xFFFFFF000000 + clkiller, 0xFFFFFF000000 + clkilled, reason)
+	sampFunctions.sendDeathMessage(st_killinfo, killer, killed, 0xFFFFFF000000 + clkiller, 0xFFFFFF000000 + clkilled, reason)
 end
 
 -- stDialogInfo
@@ -1063,8 +1087,8 @@ end
 function sf.sampGetDialogButtons()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
     local dialog = st_dialog.pDialog
-    local b1p = sampfunctions.getElementSturct(dialog, 20, 0) + 0x4D
-    local b2p = sampfunctions.getElementSturct(dialog, 21, 0) + 0x4D
+    local b1p = sampFunctions.getElementSturct(dialog, 20, 0) + 0x4D
+    local b2p = sampFunctions.getElementSturct(dialog, 21, 0) + 0x4D
     return ffi.string(b1p), ffi.string(b2p)
 end
 
