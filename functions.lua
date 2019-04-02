@@ -68,6 +68,7 @@ local sampFunctions = {
 	showDialog = cast('void(__thiscall *)(void* this, WORD wID, BYTE iStyle, PCHAR szCaption, PCHAR szText, PCHAR szButton1, PCHAR szButton2, bool bSend)', samp_dll + 0x6B9C0),
 	closeDialog = cast('void(__thiscall *)(void* this, int button)', samp_dll + 0x6C040),
 	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50),
+	getEditboxStruct = cast('char*(__thiscall *)(void* this)', samp_dll + 0x81030),
 
 	-- stGameInfo
 	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
@@ -323,6 +324,13 @@ end
 function sf.sampCloseCurrentDialogWithButton(button)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	sampFunctions.closeDialog(st_dialog, button)
+end
+
+function sf.sampGetCurrentDialogEditboxText()
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local dialog = st_dialog.pEditBox
+	local char = sampFunctions.getEditboxStruct(dialog)
+	return ffi.string(char)
 end
 
 -- stGameInfo
@@ -879,7 +887,7 @@ end
 
 function sf.raknetBitStreamReadString(bitstream, size)
 	bitstream = bs.new(bitstream)
-	local buf = ffi.new('char[?]', size)
+	local buf = ffi.new('char[?]', size + 1)
 	bitstream:ReadBits(buf, size * 8, true)
 	return ffi.string(buf)
 end
@@ -992,21 +1000,23 @@ end
 
 function sf.raknetBitStreamWriteString(bitstream, str)
 	bitstream = bs.new(bitstream)
-	local buf = ffi.new('char[?]', #str, str)
+	local buf = ffi.new('char[?]', #str + 1, str)
 	bitstream:WriteBits(buf, #str * 8, true)
 end
 
 function sf.raknetBitStreamDecodeString(bitstream, size)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	bitstream = bs.new(bitstream)
-	local buf = ffi.new('char[?]', size)
+	local buf = ffi.new('char[?]', size + 1)
 	local this = ffi.cast('void**', samp_dll + 0x10D894)
 	sampFunctions.readDecodeString(this[0], buf, size, bitstream[1], 0)
 	return ffi.string(buf)
 end
 
 function sf.raknetBitStreamEncodeString(bitstream, str)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	bitstream = bs.new(bitstream)
-	local buf = ffi.new('char[?]', #str, str)
+	local buf = ffi.new('char[?]', #str + 1, str)
 	local this = ffi.cast('void**', samp_dll + 0x10D894)
 	sampFunctions.writeEncodeString(this[0], buf, #str, bitstream[1], 0)
 end
