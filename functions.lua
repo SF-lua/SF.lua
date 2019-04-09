@@ -1046,6 +1046,11 @@ function sf.sampGetLocalPlayerNickname()
 	return sf.sampGetPlayerNickname(sf.sampGetLocalPlayerId())
 end
 
+function sf.sampGetLocalPlayerColor()
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	return sf.sampGetPlayerColor(sf.sampGetLocalPlayerId())
+end
+
 function sf.sampGetLocalPlayerId()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	return st_player.sLocalPlayerID
