@@ -12,13 +12,7 @@ require 'SAMPFUNCSLUA.structures'
 local bs = require 'SAMPFUNCSLUA.bitstream'
 
 local cast, new, str, typeof, sizeof, offsetof = ffi.cast, ffi.new, ffi.string, ffi.typeof, ffi.sizeof, ffi.offsetof
-local nchar, ncmd, tdt, i16, i32, float = typeof('char[?]'), typeof('CMDPROC'), typeof('stTextDrawTransmit[1]'), 
-	typeof('int16_t[1]'), typeof('int32_t[1]'), typeof('float[1]')
-local onfoot_size = sizeof('struct onFootData')
-local incar_size = sizeof('struct stInCarData')
-local pass_size = sizeof('struct stPassengerData')
-local trailer_size = sizeof('struct stTrailerData')
-local aim_size = sizeof('struct stAimData')
+local nchar, ncmd, i16, i32, float = typeof('char[?]'), typeof('CMDPROC'), typeof('int16_t[1]'), typeof('int32_t[1]'), typeof('float[1]')
 
 local st_dialog, st_input, st_chat, st_samp, st_scoreboard, st_pools, st_player, st_textdraw, st_object, st_gangzone, st_text3d, st_car, st_pickup
 
@@ -567,7 +561,7 @@ function sf.sampStorePlayerOnfootData(id, data)
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.onFootData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.onFootData end
-	if struct then memory.copy(data, kernel.getAddressByCData(struct), onfoot_size) end
+	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct onFootData')) end
 end
 
 function sf.sampIsPlayerPaused(id)
@@ -584,7 +578,7 @@ function sf.sampStorePlayerIncarData(id, data)
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.inCarData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.inCarData end
-	if struct then memory.copy(data, kernel.getAddressByCData(struct), incar_size) end
+	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stInCarData')) end
 end
 
 function sf.sampStorePlayerPassengerData(id, data)
@@ -594,7 +588,7 @@ function sf.sampStorePlayerPassengerData(id, data)
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.passengerData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.passengerData end
-	if struct then memory.copy(data, kernel.getAddressByCData(struct), pass_size) end
+	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stPassengerData')) end
 end
 
 function sf.sampStorePlayerTrailerData(id, data)
@@ -604,7 +598,7 @@ function sf.sampStorePlayerTrailerData(id, data)
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.trailerData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.trailerData end
-	if struct then memory.copy(data, kernel.getAddressByCData(struct), trailer_size) end
+	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stTrailerData')) end
 end
 
 function sf.sampStorePlayerAimData(id, data)
@@ -614,7 +608,7 @@ function sf.sampStorePlayerAimData(id, data)
 	local struct
 	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.aimData
 	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.aimData end
-	if struct then memory.copy(data, kernel.getAddressByCData(struct), aim_size) end
+	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stAimData')) end
 end
 
 function sf.sampSendSpawn()
@@ -749,7 +743,7 @@ end
 
 function sf.sampTextdrawCreate(id, text, x, y)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local transmit = tdt{ { fX = x, fY = y } }
+	local transmit = new('stTextDrawTransmit[1]', { { fX = x, fY = y } })
 	sampFunctions.createTextDraw(st_textdraw, transmit, cast('PCHAR', tostring(text)))
 end
 
