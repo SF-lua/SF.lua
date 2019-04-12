@@ -5,6 +5,7 @@
 	http://blast.hk/ (ñ) 2018.
 ]]
 local ffi = require 'ffi'
+local memory = require 'memory'
 
 ffi.cdef[[
 typedef unsigned int UINT;
@@ -79,6 +80,8 @@ void *malloc(size_t size);
 void free( void * ptrmem );
 void * memset( void * memptr, int val, size_t num );
 void *realloc(void *ptr, size_t newsize);
+
+typedef void(__stdcall *RPC_CALL)(BYTE*id, char* bitStream, int priority, int reliability, int orderingChannel, bool shiftTs);
 ]]
 
 local k = {}
@@ -97,15 +100,15 @@ function k.explode_color(color)
 	local g = bit.band(bit.rshift(color, 8), 0xFF)
 	local b = bit.band(color, 0xFF)
 	return a, r, g, b
- end
+end
 
- function k.join_color(a, r, g, b)
+function k.join_color(a, r, g, b)
 	local color = b  -- b
 	color = bit.bor(color, bit.lshift(g, 8))  -- g
 	color = bit.bor(color, bit.lshift(r, 16)) -- r
 	color = bit.bor(color, bit.lshift(a, 24)) -- a
 	return color
- end
+end
 
 function k.convertARGBToRGBA(color)
 	local color = tonumber(color)
@@ -117,15 +120,6 @@ function k.convertRGBAToARGB(color)
 	local color = tonumber(color)
 	local r, g, b, a = k.explode_color(color)
 	return k.join_color(a, r, g, b)
-end
-
-function k.tonumber(value, name)
-	local v = assert(tonumber(value), 'Value '..tostring(value)..' is not number.')
-	return tonumber(v)
-end
-
-function k.boolean(value, name)
-	assert(type(value) == 'boolean', 'Type value is not boolean.')
 end
 
 return k
