@@ -70,7 +70,7 @@ local sampFunctions = {
 	showDialog = cast('void(__thiscall *)(void* this, WORD wID, BYTE iStyle, PCHAR szCaption, PCHAR szText, PCHAR szButton1, PCHAR szButton2, bool bSend)', samp_dll + 0x6B9C0),
 	closeDialog = cast('void(__thiscall *)(void* this, int button)', samp_dll + 0x6C040),
 	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50),
-	getEditboxStruct = cast('char*(__thiscall *)(void* this)', samp_dll + 0x81030),
+	getEditboxText = cast('char*(__thiscall *)(void* this)', samp_dll + 0x81030),
 
 	-- stGameInfo
 	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
@@ -121,19 +121,18 @@ local hooks = {
 	onSendRpc = {
 		function(id, bitstream, priority, reliability, orderingChannel, shiftTs)
 			local oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs = id, bitstream, priority, reliability, orderingChannel, shiftTs
-			local process
 			if type(onSendRpc) == 'function' then
-				process, id, bitstream, priority, reliability, orderingChannel, shiftTs = onSendRpc(id[0], kernel.getAddressByCData(bitstream), priority, reliability, orderingChannel, shiftTs)
-			end
-			if process ~= false then
-				if id then oid[0] = cast('BYTE*', id) end
-				if bitstream then obitstream[0] = cast('char*', bitstream) end
-				opriority = priority or opriority
-				oreliability = reliability or oreliability
-				oorderingChannel = orderingChannel or oorderingChannel
-				if shiftTs ~= nil then oshiftTs = shiftTs end
-				originals.onSendRpc(oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs)
-			end
+				local process, id, bitstream, priority, reliability, orderingChannel, shiftTs = onSendRpc(id[0], kernel.getAddressByCData(bitstream), priority, reliability, orderingChannel, shiftTs)
+				if process ~= false then
+					if id then oid[0] = id end
+					if bitstream then obitstream = cast('char*', bitstream) end
+					opriority = priority or opriority
+					oreliability = reliability or oreliability
+					oorderingChannel = orderingChannel or oorderingChannel
+					if shiftTs ~= nil then oshiftTs = shiftTs end
+					originals.onSendRpc(oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs)
+				end
+			else originals.onSendRpc(oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs) end
 		end
 	}
 }
@@ -271,13 +270,24 @@ end
 
 function sf.sampGetGamestate()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_samp.iGameState
+	local states = {
+		[0] = 0,
+		[9] = 1,
+		[15] = 2,
+		[14] = 3,
+		[18] = 4
+		[13] = 5,
+	}
+	return states[st_samp.iGameState]
 end
 
 function sf.sampSetGamestate(gamestate)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	gamestate = tonumber(gamestate) or 0
-	st_samp.iGameState = gamestate
+	local states = {
+		[0] = 0, 9, 15, 14, 18, 13
+	}
+	st_samp.iGameState = states[gamestate]
 end
 
 function sf.sampSendScmEvent(event, id, param1, param2)
@@ -356,7 +366,7 @@ end
 function sf.sampGetCurrentDialogEditboxText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local dialog = st_dialog.pEditBox
-	local char = sampFunctions.getEditboxStruct(dialog)
+	local char = sampFunctions.getEditboxText(dialog)
 	return str(char)
 end
 
@@ -864,16 +874,6 @@ end
 
 -- BitStream
 
-function sf.sampSendDeathByPlayer(id, reason)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local bitstream = bs.new()
-	bitstream:BitStream()
-	bitstream:WriteBits(nchar(1, reason), 8, true)
-	bitstream:WriteBits(i16(id), 16, true)
-	raknetSendRpc(53, kernel.getAddressByCData(bitstream[1]))
-	bitstream:FBitStream()
-end
-
 function sf.raknetBitStreamReadBool(bitstream)
 	bitstream = bs.new(bitstream)
 	return bs:ReadBit()
@@ -1048,6 +1048,24 @@ function sf.raknetBitStreamEncodeString(bitstream, str)
 	sampFunctions.writeEncodeString(this[0], buf, #str, bitstream[1], 0)
 end
 
+-- RakClient
+
+function sf.sampSendDeathByPlayer(id, reason)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	local bitstream = bs.new()
+	bitstream:BitStream()
+	bitstream:WriteBits(nchar(1, reason), 8, true)
+	bitstream:WriteBits(i16(id), 16, true)
+	sf.raknetSendRpcEx(53, kernel.getAddressByCData(bitstream[1]), 1, 8, 0, false)
+	bitstream:FBitStream()
+end
+
+function sf.raknetSendRpcEx(rpc, bitstream, priority, reliability, channel, timestamp)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	rpc = nchar(1, rpc)
+	originals.onSendRpc(rpc, cast('PCHAR', bitstream), priority, reliability, channel, timestamp)
+end
+
 --- New functions
 
 -- stVehiclePool
@@ -1135,20 +1153,22 @@ function sf.sampGetDialogButtons()
 end
 
 -- Hooks
-lua_thread.create(function()
-	while not sf.isSampAvailable() do wait(0) end
-	if #hooks.onSendRpc == 1 then
-		local callback = cast('RPC_CALL', hooks.onSendRpc[1])
-		local detour_addr = kernel.getAddressByCData(callback)
-		local raknet = kernel.getAddressByCData(st_samp.pRakClientInterface)
-		local hook_addr = memory.getuint32(raknet) + 0x64
-		local inf_addr = memory.getuint32(hook_addr, true)
-		originals.onSendRpc = cast('RPC_CALL', inf_addr)
-		hooks.onSendRpc[2] = inf_addr
-		hooks.onSendRpc[3] = hook_addr
-		memory.setuint32(hook_addr, detour_addr, true)
-	end
-end)
+if sf.isSampLoaded() then
+	lua_thread.create(function()
+		while not sf.isSampAvailable() do wait(0) end
+		if #hooks.onSendRpc == 1 then
+			local callback = cast('RPC_CALL', hooks.onSendRpc[1])
+			local detour_addr = kernel.getAddressByCData(callback)
+			local raknet = kernel.getAddressByCData(st_samp.pRakClientInterface)
+			local hook_addr = memory.getuint32(raknet) + 0x64
+			local inf_addr = memory.getuint32(hook_addr, true)
+			originals.onSendRpc = cast('RPC_CALL', inf_addr)
+			hooks.onSendRpc[2] = inf_addr
+			hooks.onSendRpc[3] = hook_addr
+			memory.setuint32(hook_addr, detour_addr, true)
+		end
+	end)
+end
 
 function onScriptTerminate(scr)
 	if scr == script.this then
