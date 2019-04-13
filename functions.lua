@@ -310,6 +310,18 @@ function sf.sampSendRequestSpawn()
 	sampFunctions.sendReqSpwn()
 end
 
+function sf.sampSetSendrate(type, rate)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	type = tonumber(type) or 0
+	rate = tonumber(rate) or 0
+	local addrs = {
+		0xEC0A8, 0xEC0AC, 0xEC0B0
+	}
+	if addrs[type] then
+		memory.setuint32(samp_dll + addrs[type], rate)
+	end
+end
+
 -- stDialogInfo
 
 function sf.sampIsDialogActive()
