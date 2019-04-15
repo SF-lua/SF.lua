@@ -382,6 +382,16 @@ function sf.sampGetCurrentDialogEditboxText()
 	return str(char)
 end
 
+function sf.sampIsDialogClientside()
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	return st_dialog.bServerside ~= 0
+end
+
+function sf.sampSetDialogClientside(client)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	st_dialog.bServerside = client and 0 or 1
+end
+
 -- stGameInfo
 
 function sf.sampToggleCursor(showed)
