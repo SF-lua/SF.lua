@@ -652,6 +652,15 @@ function sf.sampSetLocalPlayerName(name)
 	sampFunctions.setName(kernel.getAddressByCData(st_player) + offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
 end
 
+function sf.sampGetPlayerStructPtr(id)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	id = tonumber(id) or 0
+	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(st_player.pLocalPlayer) end
+	if sf.sampIsPlayerConnected(id) then
+		return kernel.getAddressByCData(st_player.pRemotePlayer[id])
+	end
+end
+
 -- stInputInfo
 
 function sf.sampUnregisterChatCommand(name)
