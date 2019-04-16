@@ -275,8 +275,8 @@ function sf.sampGetGamestate()
 		[9] = 1,
 		[15] = 2,
 		[14] = 3,
-		[18] = 4
-		[13] = 5,
+		[18] = 4,
+		[13] = 5
 	}
 	return states[st_samp.iGameState]
 end
@@ -441,10 +441,10 @@ end
 function sf.sampSendChat(msg)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = cast('PCHAR', tostring(msg))
-	if char[0] == 47 then 
+	if char[0] == 47 then
 		sampFunctions.sendCMD(st_input, char)
-	else 
-		sampFunctions.say(st_player.pLocalPlayer, char) 
+	else
+		sampFunctions.say(st_player.pLocalPlayer, char)
 	end
 end
 
@@ -523,9 +523,9 @@ end
 function sf.sampGetPlayerArmor(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if sf.sampIsPlayerDefined(id) then 
+	if sf.sampIsPlayerDefined(id) then
 		if id == sf.sampGetLocalPlayerId() then return getCharArmour(playerPed) end
-		return st_player.pRemotePlayer[id].pPlayerData.fActorArmor 
+		return st_player.pRemotePlayer[id].pPlayerData.fActorArmor
 	end
 	return 0
 end
@@ -533,9 +533,9 @@ end
 function sf.sampGetPlayerHealth(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if sf.sampIsPlayerDefined(id) then 
+	if sf.sampIsPlayerDefined(id) then
 		if id == sf.sampGetLocalPlayerId() then return getCharHealth(playerPed) end
-		return st_player.pRemotePlayer[id].pPlayerData.fActorHealth 
+		return st_player.pRemotePlayer[id].pPlayerData.fActorHealth
 	end
 	return 0
 end
@@ -779,7 +779,7 @@ end
 function sf.sampTextdrawIsExists(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return id < sf.SAMP_MAX_TEXTDRAWS and st_textdraw.iIsListed[id] == 1 or st_textdraw.iPlayerTextDraw[id - sf.SAMP_MAX_TEXTDRAWS] == 1
+	return st_textdraw.iIsListed[id] == 1
 end
 
 function sf.sampTextdrawCreate(id, text, x, y)
@@ -792,11 +792,10 @@ function sf.sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
-		local struct = id >= sf.SAMP_MAX_TEXTDRAWS and st_textdraw.playerTextdraw[id - sf.SAMP_MAX_TEXTDRAWS] or st_textdraw.textdraw[id]
-		struct.byteBox = box
-		struct.dwBoxColor = color
-		struct.fBoxSizeX = sizeX
-		struct.fBoxSizeY = sizeY
+		st_textdraw.textdraw[id].byteBox = box
+		st_textdraw.textdraw[id].dwBoxColor = color
+		st_textdraw.textdraw[id].fBoxSizeX = sizeX
+		st_textdraw.textdraw[id].fBoxSizeY = sizeY
 	end
 end
 
@@ -804,10 +803,7 @@ function sf.sampTextdrawGetString(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
-		local str
-		if id >= sf.SAMP_MAX_TEXTDRAWS then str = st_textdraw.playerTextdraw[id - sf.SAMP_MAX_TEXTDRAWS].szText
-		else str = st_textdraw.textdraw[id - sf.SAMP_MAX_TEXTDRAWS].szText end
-		return str(str)
+		return st_textdraw.textdraw[id].szText
 	end
 	return ''
 end
@@ -821,9 +817,9 @@ end
 
 function sf.sampToggleScoreboard(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	if showed then 
+	if showed then
 		sampFunctions.enableScoreboard(st_scoreboard)
-	else 
+	else
 		sampFunctions.disableScoreboard(st_scoreboard, true)
 	end
 end
@@ -1204,6 +1200,166 @@ end
 function onScriptTerminate(scr)
 	if scr == script.this then
 		memory.setuint32(hooks.onSendRpc[3], hooks.onSendRpc[2], true)
+	end
+end
+function explode_argb(argb)
+  local a = bit.band(bit.rshift(argb, 24), 0xFF)
+  local r = bit.band(bit.rshift(argb, 16), 0xFF)
+  local g = bit.band(bit.rshift(argb, 8), 0xFF)
+  local b = bit.band(argb, 0xFF)
+  return a, r, g, b
+end
+
+function join_argb(a, r, g, b)
+  local argb = b  -- b
+  argb = bit.bor(argb, bit.lshift(g, 8))  -- g
+  argb = bit.bor(argb, bit.lshift(r, 16)) -- r
+  argb = bit.bor(argb, bit.lshift(a, 24)) -- a
+  return argb
+end
+function convcolor(argb)
+	local a, r, g, b = explode_argb(argb)
+	return join_argb(a, b, g, r)
+end
+
+function convcolor(argb)
+	local a, r, g, b = explode_argb(argb)
+	return join_argb(a, b, g, r)
+end
+
+function sf.sampTextdrawGetLetterSizeAndColor(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].fLetterWidth, st_textdraw.textdraw[id].fLetterHeight, tonumber(string.format("0x%s",bit.tohex(convcolor(st_textdraw.textdraw[id].dwLetterColor))))
+	end
+end
+
+function sf.sampTextdrawGetPos(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].fX, st_textdraw.textdraw[id].fY
+	end
+end
+
+function sf.sampTextdrawGetShadowColor(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].byteShadowSize, st_textdraw.textdraw[id].dwShadowColor
+	end
+end
+
+function sf.sampTextdrawGetOutlineColor(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].byteOutline, st_textdraw.textdraw[id].dwShadowColor
+	end
+end
+
+function sf.sampTextdrawGetStyle(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].iStyle
+	end
+end
+
+function sf.sampTextdrawGetProportional(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].byteProportional
+	end
+end
+
+function sf.sampTextdrawGetAlign(id)
+	if sf.sampTextdrawIsExists(id) then
+		if st_textdraw.textdraw[id].byteLeft == 1 then
+			return 1
+		elseif st_textdraw.textdraw[id].byteCenter == 1 then
+			return 2
+		elseif st_textdraw.textdraw[id].byteRight == 1 then
+			return 3
+		else
+			return 0
+		end
+	end
+end
+
+function sf.sampTextdrawGetBoxEnabledColorAndSize(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].byteBox, st_textdraw.textdraw[id].dwBoxColor, st_textdraw.textdraw[id].fBoxSizeX, st_textdraw.textdraw[id].fBoxSizeY
+	end
+end
+
+function sf.sampTextdrawGetModelRotationZoomVehColor(id)
+	if sf.sampTextdrawIsExists(id) then
+		return st_textdraw.textdraw[id].sModel, st_textdraw.textdraw[id].fRot[1], st_textdraw.textdraw[id].fRot[2],  st_textdraw.textdraw[id].fRot[3], st_textdraw.textdraw[id].fZoom, st_textdraw.textdraw[id].sColor[1], st_textdraw.textdraw[id].sColor[2]
+	end
+end
+
+function sf.sampTextdrawSetLetterSizeAndColor(id, letSizeX, letSizeY, color)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].fLetterWidth = letSizeX
+		st_textdraw.textdraw[id].fLetterHeight = letSizeY
+		st_textdraw.textdraw[id].dwLetterColor = color
+	end
+end
+
+function sf.sampTextdrawSetPos(id, posX, posY)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].fX = posX
+		st_textdraw.textdraw[id].fY = posY
+	end
+end
+
+function sf.sampTextdrawSetString(id, str)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].szText = str
+	end
+end
+
+function sf.sampTextdrawSetModelRotationZoomVehColor(id, model, rotX, rotY, rotZ, zoom, clr1, clr2)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].sModel = model
+		st_textdraw.textdraw[id].fRot[1] = rotX
+		st_textdraw.textdraw[id].fRot[2] = rotY
+		st_textdraw.textdraw[id].fRot[3] = rotZ
+		st_textdraw.textdraw[id].fZoom = zoom
+		st_textdraw.textdraw[id].sColor[1] = clr1
+		st_textdraw.textdraw[id].sColor[2] = clr2
+	end
+end
+
+function sf.sampTextdrawSetOutlineColor(id, outline, color)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].byteOutline = outline
+		st_textdraw.textdraw[id].dwShadowColor = color
+	end
+end
+
+function sf.sampTextdrawSetShadow(id, shadow, color)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].byteShadowSize = shadow
+		st_textdraw.textdraw[id].dwShadowColor = color
+	end
+end
+
+function sf.sampTextdrawSetStyle(id, style)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].iStyle = style
+	end
+end
+
+function sf.sampTextdrawSetProportional(id, proportional)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].byteProportional = proportional
+	end
+end
+
+function sf.sampTextdrawSetAlign(id, align)
+	if sf.sampTextdrawIsExists(id) then
+		st_textdraw.textdraw[id].byteLeft = 0
+		st_textdraw.textdraw[id].byteCenter = 0
+		st_textdraw.textdraw[id].byteRight = 0
+		if align == 1 then
+			st_textdraw.textdraw[id].byteLeft = 1
+		elseif align == 2 then
+			st_textdraw.textdraw[id].byteCenter = 1
+		elseif align == 3 then
+			st_textdraw.textdraw[id].byteRight = 1
+		end
 	end
 end
 
