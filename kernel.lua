@@ -107,7 +107,7 @@ function k.join_color(a, r, g, b)
 	color = bit.bor(color, bit.lshift(g, 8))  -- g
 	color = bit.bor(color, bit.lshift(r, 16)) -- r
 	color = bit.bor(color, bit.lshift(a, 24)) -- a
-	return color
+	return color % 0x100000000
 end
 
 function k.convertARGBToRGBA(color)
@@ -120,6 +120,11 @@ function k.convertRGBAToARGB(color)
 	local color = tonumber(color)
 	local r, g, b, a = k.explode_color(color)
 	return k.join_color(a, r, g, b)
+end
+
+function k.convcolor(argb)
+	local a, r, g, b = k.explode_color(argb)
+	return k.join_color(a, b, g, r)
 end
 
 return k
