@@ -24,6 +24,7 @@ local SAMP_CHAT_INFO						= 0x21A0E4
 local SAMP_COLOR							= 0x216378
 local SAMP_KILL_INFO						= 0x21A0EC
 local SAMP_SCOREBOARD_INFO					= 0x21A0B4
+local SAMP_ANIM								= 0xF15B0
 
 local sf = {
 	-- Limits
@@ -58,6 +59,9 @@ local sf = {
 
 local samp_dll = getModuleHandle('samp.dll')
 local color_table = cast('DWORD*', samp_dll + SAMP_COLOR)
+
+local anim_list = new('char[1811][36]')
+ffi.copy(anim_list, cast('void*', samp_dll + SAMP_ANIM), sizeof(anim_list))
 
 local sampFunctions = {
 	-- stSAMP
@@ -320,6 +324,22 @@ function sf.sampSetSendrate(type, rate)
 	if addrs[type] then
 		memory.setuint32(samp_dll + addrs[type], rate)
 	end
+end
+
+function sf.sampGetAnimationNameAndFile(id)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	id = tonumber(id) or 0
+	local name, file = ffi.string(anim_list[id - 1]):match('(.*):(.*)')
+	return name or '', file or ''
+end
+
+function sf.sampFindAnimationIdByNameAndFile(file, name)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	for i = 0, sizeof(anim_list) / 36 do
+		local n, f = sf.sampGetAnimationNameAndFile(i)
+		if n == name and f == file then return i end
+	end
+	return -1
 end
 
 -- stDialogInfo
