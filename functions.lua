@@ -75,7 +75,7 @@ local sampFunctions = {
 	closeDialog = cast('void(__thiscall *)(void* this, int button)', samp_dll + 0x6C040),
 	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50),
 	getEditboxText = cast('char*(__thiscall *)(void* this)', samp_dll + 0x81030),
-
+	setEditboxText = cast('void(__thiscall *)(void* this, char* text,int i)', samp_dll + 0x80F60),
 	-- stGameInfo
 	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
 	cursorUnlockActorCam = cast('void (__thiscall*)(void* this)', samp_dll + 0x9BC10),
@@ -397,9 +397,12 @@ end
 
 function sf.sampGetCurrentDialogEditboxText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local dialog = st_dialog.pEditBox
-	local char = sampFunctions.getEditboxText(dialog)
+	local char = sampFunctions.getEditboxText(st_dialog.pEditBox)
 	return str(char)
+end
+
+function sf.sampSetCurrentDialogEditboxText(text)
+	sampFunctions.setEditboxText(st_dialog.pEditBox,ffi.cast("char*",text),0)
 end
 
 function sf.sampIsDialogClientside()
@@ -723,12 +726,12 @@ end
 
 function sf.sampSetChatInputText(text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	st_input.szInputBuffer = nchar(129, tostring(text))
+	sampFunctions.setEditboxText(st_input.pDXUTEditBox,ffi.cast("char *", text), 0)
 end
 
 function sf.sampGetChatInputText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(st_input.szInputBuffer)
+	return str(sampFunctions.getEditboxText(st_input.pDXUTEditBox))
 end
 
 function sf.sampSetChatInputEnabled(enabled)
