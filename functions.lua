@@ -89,6 +89,8 @@ local sampFunctions = {
 	forceUnocSync = cast('void (__thiscall *)(void* this, WORD id, BYTE seat)', samp_dll + 0x4B30),
 	setAction = cast('void( __thiscall*)(void* this, BYTE specialActionId)', samp_dll + 0x30C0),
 	setName = cast('void(__thiscall *)(int this, const char *name, int len)', samp_dll + 0xB290),
+	sendEnterVehicle = cast('void (__thiscall*)(void* this, int id, bool passenger)', samp_dll + 0x58C0),
+	sendExitVehicle = cast('void (__thiscall*)(void* this, int id)', samp_dll + 0x59E0),
 
 	-- stInputInfo
 	sendCMD = cast('void(__thiscall *)(void* this, PCHAR message)', samp_dll + 0x65C60),
@@ -314,15 +316,15 @@ function sf.sampSendRequestSpawn()
 	sampFunctions.sendReqSpwn()
 end
 
-function sf.sampSetSendrate(type, rate)
+function sf.sampSetSendrate(_type, rate)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	type = tonumber(type) or 0
+	type = tonumber(_type) or 0
 	rate = tonumber(rate) or 0
 	local addrs = {
 		0xEC0A8, 0xEC0AC, 0xEC0B0
 	}
 	if addrs[type] then
-		memory.setuint32(samp_dll + addrs[type], rate)
+		memory.setuint32(samp_dll + addrs[_type], rate)
 	end
 end
 
@@ -692,6 +694,16 @@ function sf.sampGetPlayerStructPtr(id)
 	if sf.sampIsPlayerConnected(id) then
 		return kernel.getAddressByCData(st_player.pRemotePlayer[id])
 	end
+end
+
+function sf.sampSendEnterVehicle(id, passenger)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	sampFunctions.sendEnterVehicle(st_player.pLocalPlayer, id, passenger)
+end
+
+function sf.sampSendExitVehicle(id)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	sampFunctions.sendExitVehicle(st_player.pLocalPlayer, id)
 end
 
 -- stInputInfo
@@ -1512,7 +1524,7 @@ function sf.sampAddChatMessageEx(_type, text, prefix, textColor, prefixColor)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = cast('PCSTR', tostring(text))
 	local charPrefix = prefix and cast('PCSTR', tostring(prefix))
-	sampFunctions.addMessage(st_chat, type, char, charPrefix, textColor, prefixColor)
+	sampFunctions.addMessage(st_chat, _type, char, charPrefix, textColor, prefixColor)
 end
 
 -- stPickupPool
