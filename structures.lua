@@ -1,65 +1,63 @@
 --[[
 	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for development.
-	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (ñ) 2018.
+	Thanks BH Team for the source code of s0beit provided.
+	fishlake-scripts.ru & blast.hk (c) 2018-2019.
 ]]
 local ffi = require 'ffi'
 
 ffi.cdef[[
-/*typedef struct stSAMPPools stSAMPPools;
-typedef struct stSAMP stSAMP;
-typedef struct stServerInfo stServerInfo;
-typedef struct stServerPresets stServerPresets;
-typedef struct stDialogInfo stDialogInfo;
-typedef struct stTextDrawTransmit stTextDrawTransmit;
-typedef struct stTextdraw stTextdraw;
-typedef struct stTextdrawPool stTextdrawPool;
-typedef struct stPickup stPickup;
-typedef struct stPickupPool stPickupPool;
-typedef struct stPlayerPool stPlayerPool;
-typedef struct stSAMPKeys stSAMPKeys;
-typedef struct stOnFootData stOnFootData;
-typedef struct stInCarData stInCarData;
-typedef struct stAimData stAimData;
-typedef struct stTrailerData stTrailerData;
-typedef struct stPassengerData stPassengerData;
-typedef struct stDamageData stDamageData;
-typedef struct stSurfData stSurfData;
-typedef struct stUnoccupiedData stUnoccupiedData;
-typedef struct stBulletData stBulletData;
-typedef struct stSpectatorData stSpectatorData;
-typedef struct stStatsData stStatsData;
-typedef struct stHeadSync stHeadSync;
-typedef struct stLocalPlayer stLocalPlayer;*/
-typedef struct stRemotePlayerData stRemotePlayerData;
-/*typedef struct stRemotePlayer stRemotePlayer;*/
-typedef struct stSAMPEntity stSAMPEntity;
-typedef struct stSAMPPed stSAMPPed;
-/*typedef struct stVehiclePool stVehiclePool;
-typedef struct stSAMPVehicle stSAMPVehicle;
-typedef struct stObject stObject;
-typedef struct stObjectPool stObjectPool;
-typedef struct stGangzone stGangzone;
-typedef struct stGangzonePool stGangzonePool;
-typedef struct stTextLabel stTextLabel;
-typedef struct stTextLabelPool stTextLabelPool;
-typedef struct stChatEntry stChatEntry;*/
-typedef struct stFontRenderer stFontRenderer;
-/*typedef struct stChatInfo stChatInfo;*/
-typedef struct stInputBox stInputBox;
-/*typedef struct stInputInfo stInputInfo;
-typedef struct stKillEntry stKillEntry;
-typedef struct stKillInfo stKillInfo;
-typedef struct stChatPlayer stChatPlayer;*/
-typedef struct stAudio stAudio;
-/*typedef struct stGameInfo stGameInfo;
-typedef struct stScoreboardInfo stScoreboardInfo;
-typedef struct stActorPool stActorPool;
-typedef struct stChatBubbleInfo stChatBubbleInfo;
-typedef struct stStreamedOutPlayerInfo stStreamedOutPlayerInfo;*/
-typedef struct stCamera stCamera;
-typedef struct BitStream BitStream;
+/*typedef struct SFL_SAMPPools SFL_SAMPPools;
+typedef struct SFL_SAMP SFL_SAMP;
+typedef struct SFL_ServerInfo SFL_ServerInfo;
+typedef struct SFL_ServerPresets SFL_ServerPresets;
+typedef struct SFL_DialogInfo SFL_DialogInfo;
+typedef struct SFL_TextDrawTransmit SFL_TextDrawTransmit;
+typedef struct SFL_Textdraw SFL_Textdraw;
+typedef struct SFL_TextdrawPool SFL_TextdrawPool;
+typedef struct SFL_Pickup SFL_Pickup;
+typedef struct SFL_PickupPool SFL_PickupPool;
+typedef struct SFL_PlayerPool SFL_PlayerPool;
+typedef struct SFL_SAMPKeys SFL_SAMPKeys;
+typedef struct SFL_OnFootData SFL_OnFootData;
+typedef struct SFL_InCarData SFL_InCarData;
+typedef struct SFL_AimData SFL_AimData;
+typedef struct SFL_TrailerData SFL_TrailerData;
+typedef struct SFL_PassengerData SFL_PassengerData;
+typedef struct SFL_DamageData SFL_DamageData;
+typedef struct SFL_SurfData SFL_SurfData;
+typedef struct SFL_UnoccupiedData SFL_UnoccupiedData;
+typedef struct SFL_BulletData SFL_BulletData;
+typedef struct SFL_SpectatorData SFL_SpectatorData;
+typedef struct SFL_StatsData SFL_StatsData;
+typedef struct SFL_HeadSync SFL_HeadSync;
+typedef struct SFL_LocalPlayer SFL_LocalPlayer;*/
+typedef struct SFL_RemotePlayerData SFL_RemotePlayerData;
+/*typedef struct SFL_RemotePlayer SFL_RemotePlayer;*/
+typedef struct SFL_SAMPEntity SFL_SAMPEntity;
+typedef struct SFL_SAMPPed SFL_SAMPPed;
+/*typedef struct SFL_VehiclePool SFL_VehiclePool;
+typedef struct SFL_SAMPVehicle SFL_SAMPVehicle;
+typedef struct SFL_Object SFL_Object;
+typedef struct SFL_ObjectPool SFL_ObjectPool;
+typedef struct SFL_Gangzone SFL_Gangzone;
+typedef struct SFL_GangzonePool SFL_GangzonePool;
+typedef struct SFL_TextLabel SFL_TextLabel;
+typedef struct SFL_TextLabelPool SFL_TextLabelPool;
+typedef struct SFL_ChatEntry SFL_ChatEntry;*/
+typedef struct SFL_FontRenderer SFL_FontRenderer;
+/*typedef struct SFL_ChatInfo SFL_ChatInfo;*/
+typedef struct SFL_InputBox SFL_InputBox;
+/*typedef struct SFL_InputInfo SFL_InputInfo;
+typedef struct SFL_KillEntry SFL_KillEntry;
+typedef struct SFL_KillInfo SFL_KillInfo;
+typedef struct SFL_ChatPlayer SFL_ChatPlayer;*/
+typedef struct SFL_Audio SFL_Audio;
+/*typedef struct SFL_GameInfo SFL_GameInfo;
+typedef struct SFL_ScoreboardInfo SFL_ScoreboardInfo;
+typedef struct SFL_ActorPool SFL_ActorPool;
+typedef struct SFL_ChatBubbleInfo SFL_ChatBubbleInfo;
+typedef struct SFL_StreamedOutPlayerInfo SFL_StreamedOutPlayerInfo;*/
+typedef struct SFL_Camera SFL_Camera;
 
 enum Limits
 {
@@ -78,7 +76,9 @@ enum Limits
 	SAMP_ALLOWED_PLAYER_NAME_LENGTH = 20,
 };
 
-struct stSAMPPools
+#pragma pack(push, 1)
+
+struct SFL_SAMPPools
 {
 	struct stActorPool		*pActor;
 	struct stObjectPool		*pObject;
@@ -89,12 +89,12 @@ struct stSAMPPools
 	struct stPlayerPool		*pPlayer;
 	struct stVehiclePool	*pVehicle;
 	struct stPickupPool		*pPickup;
-} __attribute__ ((packed));
+};
 
-struct stSAMP
+struct SFL_SAMP
 {
 	void					*pUnk0;
-	struct stServerInfo		*pServerInfo;
+	struct SFL_ServerInfo		*pServerInfo;
 	BYTE					byteSpace[24];
 	char					szIP[257];
 	char					szHostname[259];
@@ -104,18 +104,18 @@ struct stSAMP
 	int						iLanMode;
 	int						iGameState;
 	DWORD					ulConnectTick;
-	struct stServerPresets	*pSettings;
+	struct SFL_ServerPresets	*pSettings;
 	void					*pRakClientInterface;
-	struct stSAMPPools		*pPools;
-} __attribute__ ((packed));
+	struct SFL_SAMPPools		*pPools;
+};
 
-struct stServerInfo
+struct SFL_ServerInfo
 {
 	DWORD 					uiIP;
 	WORD 					usPort;
-} __attribute__ ((packed));
+};
 
-struct stServerPresets
+struct SFL_ServerPresets
 {
 	BYTE					byteCJWalk;
 	int						m_iDeathDropMoney;
@@ -139,9 +139,9 @@ struct stServerPresets
 	float					fGlobalChatRadiusLimit;
 	BYTE					byteShowNameTags;
 	bool					m_bLimitGlobalChatRadius;
-} __attribute__ ((packed));
+};
 
-struct stDialogInfo
+struct SFL_DialogInfo
 {
 	void					*m_pD3DDevice;
 	int						iTextPoxX;
@@ -161,9 +161,9 @@ struct stDialogInfo
 	DWORD					uiTextHeight;
 	char					szCaption[65];
 	int						bServerside;
-} __attribute__ ((packed));
+};
 
-struct stTextDrawTransmit
+struct SFL_TextDrawTransmit
 {
 	union
 	{
@@ -195,9 +195,9 @@ struct stTextDrawTransmit
 	float					fRot[3];
 	float					fZoom;
 	WORD					sColor[2];
-} __attribute__ ((packed));
+};
 
-struct stTextdraw
+struct SFL_Textdraw
 {
 	char					szText[800 + 1];
 	char					szString[1600 + 2];
@@ -237,48 +237,48 @@ struct stTextdraw
 	DWORD					dword9CD;
 	BYTE					byte9D1;
 	DWORD					dword9D2;
-} __attribute__ ((packed));
+};
 
-struct stTextdrawPool
+struct SFL_TextdrawPool
 {
 	int						iIsListed[SAMP_MAX_TEXTDRAWS];
 	int						iPlayerTextDraw[SAMP_MAX_PLAYERTEXTDRAWS];
-	struct stTextdraw		*textdraw[SAMP_MAX_TEXTDRAWS];
-	struct stTextdraw		*playerTextdraw[SAMP_MAX_PLAYERTEXTDRAWS];
-} __attribute__ ((packed));
+	struct SFL_Textdraw		*textdraw[SAMP_MAX_TEXTDRAWS];
+	struct SFL_Textdraw		*playerTextdraw[SAMP_MAX_PLAYERTEXTDRAWS];
+};
 
-struct stPickup
+struct SFL_Pickup
 {
 	int						iModelID;
 	int						iType;
 	float					fPosition[3];
-} __attribute__ ((packed));
+};
 
-struct stPickupPool
+struct SFL_PickupPool
 {
 	int						iPickupsCount;
 	DWORD					ul_GTA_PickupID[SAMP_MAX_PICKUPS];
 	int						iPickupID[SAMP_MAX_PICKUPS];
 	int						iTimePickup[SAMP_MAX_PICKUPS];
 	BYTE					unk[SAMP_MAX_PICKUPS * 3];
-	struct stPickup			pickup[SAMP_MAX_PICKUPS];
-} __attribute__ ((packed));
+	struct SFL_Pickup			pickup[SAMP_MAX_PICKUPS];
+};
 
-struct stPlayerPool
+struct SFL_PlayerPool
 {
 	DWORD					ulMaxPlayerID;
 	WORD					sLocalPlayerID;
 	void					*pVTBL_txtHandler;
 	stdstring				strLocalPlayerName;
-	struct stLocalPlayer	*pLocalPlayer;
+	struct SFL_LocalPlayer	*pLocalPlayer;
 	int						iLocalPlayerPing;
 	int						iLocalPlayerScore;
-	struct stRemotePlayer	*pRemotePlayer[SAMP_MAX_PLAYERS];
+	struct SFL_RemotePlayer	*pRemotePlayer[SAMP_MAX_PLAYERS];
 	int						iIsListed[SAMP_MAX_PLAYERS];
 	DWORD					dwPlayerIP[SAMP_MAX_PLAYERS]; // always 0
-} __attribute__ ((packed));
+};
 
-struct stSAMPKeys
+struct SFL_SAMPKeys
 {
 	BYTE keys_primaryFire : 1;
 	BYTE keys_horn__crouch : 1;
@@ -296,16 +296,16 @@ struct stSAMPKeys
 	BYTE keys_specialCtrlLeft : 1;
 	BYTE keys_specialCtrlRight : 1;
 	BYTE keys__unused : 1;
-} __attribute__ ((packed));
+};
 
-struct stOnFootData
+struct SFL_OnFootData
 {
 	WORD					sLeftRightKeys;
 	WORD					sUpDownKeys;
 	union
 	{
 		WORD				sKeys;
-		struct stSAMPKeys	stSampKeys;
+		struct SFL_SAMPKeys	stSampKeys;
 	};
 	float					fPosition[3];
 	float					fQuaternion[4];
@@ -318,9 +318,9 @@ struct stOnFootData
 	WORD					sSurfingVehicleID;
 	short					sCurrentAnimationID;
 	short					sAnimFlags;
-} __attribute__ ((packed));
+};
 
-struct stInCarData
+struct SFL_InCarData
 {
 	WORD					sVehicleID;
 	WORD					sLeftRightKeys;
@@ -328,7 +328,7 @@ struct stInCarData
 	union
 	{
 		WORD				sKeys;
-		struct stSAMPKeys	stSampKeys;
+		struct SFL_SAMPKeys	stSampKeys;
 	};
 	float					fQuaternion[4];
 	float					fPosition[3];
@@ -345,9 +345,9 @@ struct stInCarData
 		WORD				HydraThrustAngle[2];	//nearly same value
 		float				fTrainSpeed;
 	};
-} __attribute__ ((packed));
+};
 
-struct stAimData
+struct SFL_AimData
 {
 	BYTE					byteCamMode;
 	float					vecAimf1[3];
@@ -356,18 +356,18 @@ struct stAimData
 	BYTE					byteCamExtZoom : 6;		// 0-63 normalized
 	BYTE					byteWeaponState : 2;	// see eWeaponState
 	BYTE					bUnk;
-} __attribute__ ((packed));
+};
 
-struct stTrailerData
+struct SFL_TrailerData
 {
 	WORD					sTrailerID;
 	float					fPosition[3];
 	float					fQuaternion[4];
 	float					fSpeed[3];
 	float					fSpin[3];
-} __attribute__ ((packed));
+};
 
-struct stPassengerData
+struct SFL_PassengerData
 {
 	WORD					sVehicleID;
 	BYTE					byteSeatID;
@@ -379,33 +379,33 @@ struct stPassengerData
 	union
 	{
 		WORD				sKeys;
-		struct stSAMPKeys	stSampKeys;
+		struct SFL_SAMPKeys	stSampKeys;
 	};
 	float					fPosition[3];
-} __attribute__ ((packed));
+};
 
-struct stDamageData
+struct SFL_DamageData
 {
 	WORD					sVehicleID_lastDamageProcessed;
 	int						iBumperDamage;
 	int						iDoorDamage;
 	BYTE					byteLightDamage;
 	BYTE					byteWheelDamage;
-} __attribute__ ((packed));
+};
 
-struct stSurfData
+struct SFL_SurfData
 {
 	int						iIsSurfing;
 	float					fSurfPosition[3];
 	int						iUnk0;
 	WORD					sSurfingVehicleID;
 	DWORD					ulSurfTick;
-	struct stSAMPVehicle	*pSurfingVehicle;
+	struct SFL_SAMPVehicle	*pSurfingVehicle;
 	int						iUnk1;
 	int						iSurfMode;	//0 = not surfing, 1 = moving (unstable surf), 2 = fixed on vehicle
-} __attribute__ ((packed));
+};
 
-struct stUnoccupiedData
+struct SFL_UnoccupiedData
 {
 	int16_t					sVehicleID;
 	BYTE					byteSeatID;
@@ -415,9 +415,9 @@ struct stUnoccupiedData
 	float					fMoveSpeed[3];
 	float					fTurnSpeed[3];
 	float					fHealth;
-} __attribute__ ((packed));
+};
 
-struct stBulletData
+struct SFL_BulletData
 {
 	BYTE					byteType;
 	WORD					sTargetID;
@@ -425,36 +425,36 @@ struct stBulletData
 	float					fTarget[3];
 	float					fCenter[3];
 	BYTE					byteWeaponID;
-} __attribute__ ((packed));
+};
 
-struct stSpectatorData
+struct SFL_SpectatorData
 {
 	WORD					sLeftRightKeys;
 	WORD					sUpDownKeys;
 	union
 	{
 		WORD				sKeys;
-		struct stSAMPKeys	stSampKeys;
+		struct SFL_SAMPKeys	stSampKeys;
 	};
 	float					fPosition[3];
-} __attribute__ ((packed));
+};
 
-struct stStatsData
+struct SFL_StatsData
 {
 	int						iMoney;
 	int						iAmmo;
-} __attribute__ ((packed));
+};
 
-struct stHeadSync
+struct SFL_HeadSync
 {
 	float					fHeadSync[3];
 	int						iHeadSyncUpdateTick;
 	int						iHeadSyncLookTick;
-} __attribute__ ((packed));
+};
 
-struct stLocalPlayer
+struct SFL_LocalPlayer
 {
-	struct stSAMPPed		*pSAMP_Actor;
+	struct SFL_SAMPPed		*pSAMP_Actor;
 	WORD					sCurrentAnimID;
 	WORD					sAnimFlags;
 	DWORD					ulUnk0;
@@ -462,11 +462,11 @@ struct stLocalPlayer
 	int						iIsWasted;
 	WORD					sCurrentVehicleID;
 	WORD					sLastVehicleID;
-	struct stOnFootData		onFootData;
-	struct stPassengerData	passengerData;
-	struct stTrailerData	trailerData;
-	struct stInCarData		inCarData;
-	struct stAimData		aimData;
+	struct SFL_OnFootData		onFootData;
+	struct SFL_PassengerData	passengerData;
+	struct SFL_TrailerData	trailerData;
+	struct SFL_InCarData		inCarData;
+	struct SFL_AimData		aimData;
 	BYTE					byteTeamID;
 	int						iSpawnSkin;
 	BYTE					byteUnk1;
@@ -497,10 +497,10 @@ struct stLocalPlayer
 	WORD					sTargetObjectID;
 	WORD					sTargetVehicleID;
 	WORD					sTargetPlayerID;
-	struct stHeadSync		headSyncData;
+	struct SFL_HeadSync		headSyncData;
 	DWORD					ulHeadSyncTick;
 	BYTE					byteSpace3[260];
-	struct stSurfData		surfData;
+	struct SFL_SurfData		surfData;
 	int						iClassSelectionOnDeath;
 	int						iSpawnClassID;
 	int						iRequestToSpawn;
@@ -510,13 +510,13 @@ struct stLocalPlayer
 	BYTE					byteSpectateType;		// 0 = none, 1 = player, 2 = vehicle
 	int						iSpectateID;
 	int						iInitiatedSpectating;
-	struct stDamageData		vehicleDamageData;
-} __attribute__ ((packed));
+	struct SFL_DamageData		vehicleDamageData;
+};
 
-struct stRemotePlayerData
+struct SFL_RemotePlayerData
 {
-	struct stSAMPPed		*pSAMP_Actor;
-	struct stSAMPVehicle	*pSAMP_Vehicle;
+	struct SFL_SAMPPed		*pSAMP_Actor;
+	struct SFL_SAMPVehicle	*pSAMP_Vehicle;
 	BYTE					byteTeamID;
 	BYTE					bytePlayerState;
 	BYTE					byteSeatID;
@@ -538,11 +538,11 @@ struct stRemotePlayerData
 	int						iHasJetPack;
 	BYTE					byteSpecialAction;
 	DWORD					ulUnk4[3];
-	struct stOnFootData		onFootData;
-	struct stInCarData		inCarData;
-	struct stTrailerData	trailerData;
-	struct stPassengerData	passengerData;
-	struct stAimData		aimData;
+	struct SFL_OnFootData	onFootData;
+	struct SFL_InCarData	inCarData;
+	struct SFL_TrailerData	trailerData;
+	struct SFL_PassengerData	passengerData;
+	struct SFL_AimData		aimData;
 	float					fActorArmor;
 	float					fActorHealth;
 	DWORD					ulUnk10;
@@ -551,33 +551,33 @@ struct stRemotePlayerData
 	DWORD					dwLastStreamedInTick;	// is 0 when currently streamed in
 	DWORD					ulUnk7;
 	int						iAFKState;
-	struct stHeadSync		headSyncData;
+	struct SFL_HeadSync		headSyncData;
 	int						iGlobalMarkerLoaded;
 	int						iGlobalMarkerLocation[3];
 	DWORD					ulGlobalMarker_GTAID;
-} __attribute__ ((packed));
+};
 
-struct stRemotePlayer
+struct SFL_RemotePlayer
 {
-	stRemotePlayerData		*pPlayerData;
+	SFL_RemotePlayerData		*pPlayerData;
 	int						iIsNPC;
 	void					*pVTBL_txtHandler;
 	stdstring				strPlayerName;
 	int						iScore;
 	int						iPing;
-} __attribute__ ((packed));
+};
 
-struct stSAMPEntity
+struct SFL_SAMPEntity
 {
 	void					*pVTBL;
 	BYTE					byteUnk0[60]; // game CEntity object maybe. always empty.
 	void					*pGTAEntity;
 	DWORD					ulGTAEntityHandle;
-} __attribute__ ((packed));
+};
 
-struct stSAMPPed
+struct SFL_SAMPPed
 {
-	stSAMPEntity			actor_info;
+	SFL_SAMPEntity			actor_info;
 	int						usingCellPhone;
 	BYTE					byteUnk0[600];
 	struct actor_info		*pGTA_Ped;
@@ -593,27 +593,27 @@ struct stSAMPPed
 	int						danceMove;
 	BYTE					byteUnk3[20];
 	int						isUrinating;
-} __attribute__ ((packed));
+};
 
-struct stVehiclePool
+struct SFL_VehiclePool
 {
 	int						iVehicleCount;
 	void					*pUnk0;
 	BYTE					byteSpace1[0x112C];
-	struct stSAMPVehicle	*pSAMP_Vehicle[SAMP_MAX_VEHICLES];
+	struct SFL_SAMPVehicle	*pSAMP_Vehicle[SAMP_MAX_VEHICLES];
 	int						iIsListed[SAMP_MAX_VEHICLES];
-	struct stSAMPVehicle	*pGTA_Vehicle[SAMP_MAX_VEHICLES];
+	struct SFL_SAMPVehicle	*pGTA_Vehicle[SAMP_MAX_VEHICLES];
 	BYTE					byteSpace2[SAMP_MAX_VEHICLES * 6];
 	DWORD					ulShit[SAMP_MAX_VEHICLES];
 	int						iIsListed2[SAMP_MAX_VEHICLES];
 	DWORD					byteSpace3[SAMP_MAX_VEHICLES * 2];
 	float					fSpawnPos[SAMP_MAX_VEHICLES][3];
 	int						iInitiated;
-} __attribute__ ((packed));
+};
 
-struct stSAMPVehicle
+struct SFL_SAMPVehicle
 {
-	stSAMPEntity			vehicle_info;
+	SFL_SAMPEntity			vehicle_info;
 	DWORD					bUnk0;
 	struct vehicle_info		*pGTA_Vehicle;
 	BYTE					byteUnk1[8];
@@ -626,11 +626,11 @@ struct stSAMPVehicle
 	BYTE					byteColor[2];
 	int						iColorSync;
 	int						iColor_something;
-} __attribute__ ((packed));
+};
 
-struct stObject
+struct SFL_Object
 {
-	stSAMPEntity			object_info;
+	SFL_SAMPEntity			object_info;
 	BYTE					byteUnk0[2];
 	DWORD					ulUnk1;
 	int						iModel;
@@ -641,29 +641,29 @@ struct stObject
 	BYTE					byteUnk3[68];
 	BYTE					byteUnk4;
 	float					fRot[3];
-} __attribute__ ((packed));
+};
 
-struct stObjectPool
+struct SFL_ObjectPool
 {
 	int						iObjectCount;
 	int						iIsListed[SAMP_MAX_OBJECTS];
-	struct stObject			*object[SAMP_MAX_OBJECTS];
-} __attribute__ ((packed));
+	struct SFL_Object			*object[SAMP_MAX_OBJECTS];
+};
 
-struct stGangzone
+struct SFL_Gangzone
 {
 	float					fPosition[4];
 	DWORD					dwColor;
 	DWORD					dwAltColor;
-} __attribute__ ((packed));
+};
 
-struct stGangzonePool
+struct SFL_GangzonePool
 {
-	struct stGangzone		*pGangzone[SAMP_MAX_GANGZONES];
+	struct SFL_Gangzone		*pGangzone[SAMP_MAX_GANGZONES];
 	int						iIsListed[SAMP_MAX_GANGZONES];
-} __attribute__ ((packed));
+};
 
-struct stTextLabel
+struct SFL_TextLabel
 {
 	PCHAR					pText;
 	DWORD					color;
@@ -672,15 +672,15 @@ struct stTextLabel
 	BYTE					byteShowBehindWalls;
 	WORD					sAttachedToPlayerID;
 	WORD					sAttachedToVehicleID;
-} __attribute__ ((packed));
+};
 
-struct stTextLabelPool
+struct SFL_TextLabelPool
 {
-	struct stTextLabel		textLabel[SAMP_MAX_3DTEXTS];
+	struct SFL_TextLabel		textLabel[SAMP_MAX_3DTEXTS];
 	int						iIsListed[SAMP_MAX_3DTEXTS];
-} __attribute__ ((packed));
+};
 
-struct stChatEntry
+struct SFL_ChatEntry
 {
 	DWORD					SystemTime;
 	char					szPrefix[28];
@@ -689,9 +689,9 @@ struct stChatEntry
 	int						iType;			// 2 - text + prefix, 4 - text (server msg), 8 - text (debug)
 	DWORD					clTextColor;
 	DWORD					clPrefixColor;	// or textOnly colour
-} __attribute__ ((packed));
+};
 
-struct stFontRenderer
+struct SFL_FontRenderer
 {
 	ID3DXFont				*m_pChatFont;
 	ID3DXFont				*m_pLittleFont;
@@ -701,9 +701,9 @@ struct stFontRenderer
 	void 					*m_pTempSprite;
 	void					*m_pD3DDevice;
 	PCHAR					m_pszTextBuffer;
-} __attribute__ ((packed));
+};
 
-struct stChatInfo
+struct SFL_ChatInfo
 {
 	int						pagesize;
 	PCHAR					pLastMsgText;
@@ -718,8 +718,8 @@ struct stChatInfo
 	D3DCOLOR				clInfoColor;
 	D3DCOLOR				clDebugColor;
 	DWORD					m_lChatWindowBottom;
-	struct stChatEntry		chatEntry[100];
-	stFontRenderer			*m_pFontRenderer;
+	struct SFL_ChatEntry	chatEntry[100];
+	SFL_FontRenderer		*m_pFontRenderer;
 	void					*m_pChatTextSprite;
 	void					*m_pSprite;
 	void					*m_pD3DDevice;
@@ -734,9 +734,9 @@ struct stChatInfo
 	int						m_nPrevScrollBarPosition;
 	int						m_iFontSizeY;
 	int						m_iTimestampWidth;
-} __attribute__ ((packed));
+};
 
-struct stInputBox
+struct SFL_InputBox
 {
 	void					*pUnknown;
 	BYTE					bIsChatboxOpen;
@@ -750,13 +750,13 @@ struct stInputBox
 	int						iMarkedText_startPos; // Highlighted text between this and iCursorPosition
 	BYTE					unk4[20];
 	int						iMouseLeftButton;
-} __attribute__ ((packed));
+};
 
-struct stInputInfo
+struct SFL_InputInfo
 {
 	void					*pD3DDevice;
 	void					*pDXUTDialog;
-	stInputBox				*pDXUTEditBox;
+	SFL_InputBox				*pDXUTEditBox;
 	CMDPROC					pCMDs[SAMP_MAX_CLIENTCMDS];
 	char					szCMDNames[SAMP_MAX_CLIENTCMDS][33];
 	int						iCMDCount;
@@ -767,21 +767,21 @@ struct stInputInfo
 	int						iCurrentRecall;
 	int						iTotalRecalls;
 	CMDPROC					pszDefaultCMD;
-} __attribute__ ((packed));
+};
 
-struct stKillEntry
+struct SFL_KillEntry
 {
 	char					szKiller[25];
 	char					szVictim[25];
 	D3DCOLOR				clKillerColor;
 	D3DCOLOR				clVictimColor;
 	BYTE					byteType;
-} __attribute__ ((packed));
+};
 
-struct stKillInfo
+struct SFL_KillInfo
 {
 	int						iEnabled;
-	struct stKillEntry		killEntry[5];
+	struct SFL_KillEntry	killEntry[5];
 	int 					iLongestNickLength;
   	int 					iOffsetX;
   	int 					iOffsetY;
@@ -793,9 +793,9 @@ struct stKillInfo
 	int 					iAuxFontInited;
   	ID3DXFont 				*pAuxFont1;
   	ID3DXFont 				*pAuxFont2;
-} __attribute__ ((packed));
+};
 
-struct stChatPlayer
+struct SFL_ChatPlayer
 {
 	int						iCreated;
 	char					probablyTheText[256];
@@ -804,24 +804,24 @@ struct stChatPlayer
 	DWORD					dwColor;
 	float					fDrawDistance;
 	DWORD					dwUnknown;
-} __attribute__ ((packed));
+};
 
-struct stAudio
+struct SFL_Audio
 {
 	int						iSoundState; // 0 - Finished, 1 - Loaded, 2 - Playing
-} __attribute__ ((packed));
+};
 
-struct stCamera
+struct SFL_Camera
 {
 	void*				pEntity; // attached entity
 	void*				matrix;
-} __attribute__ ((packed));
+};
 
-struct stGameInfo
+struct SFL_GameInfo
 {
-	stAudio*				pAudio;
-	stCamera*				pCamera;
-	stSAMPPed*				pLocalPlayerPed;
+	SFL_Audio*				pAudio;
+	SFL_Camera*				pCamera;
+	SFL_SAMPPed*			pLocalPlayerPed;
 	float					fCheckpointPos[3];
 	float					fCheckpointExtent[3];
 	int						bCheckpointsEnabled;
@@ -846,9 +846,9 @@ struct stGameInfo
 	DWORD					ulFpsLimit;
 	BYTE					byteUnk3;
 	BYTE					byteVehicleModels[212];
-} __attribute__ ((packed));
+};
 
-struct stScoreboardInfo
+struct SFL_ScoreboardInfo
 {
 	int						iIsEnabled;
 	int						iPlayersCount;
@@ -861,26 +861,28 @@ struct stScoreboardInfo
 	void 					*pList;
 	int						iOffset;		// ?
 	int						iIsSorted;		// ?
-} __attribute__ ((packed));
+};
 
-struct stActorPool
+struct SFL_ActorPool
 {
 	int						iLastActorID;
-	stSAMPEntity			*pActor[SAMP_MAX_ACTORS]; // ?
+	SFL_SAMPEntity			*pActor[SAMP_MAX_ACTORS]; // ?
 	int						iIsListed[SAMP_MAX_ACTORS];
-	struct stSAMPPed		*pGTAPed[SAMP_MAX_ACTORS];
+	struct SFL_SAMPPed		*pGTAPed[SAMP_MAX_ACTORS];
 	DWORD					ulUnk0[SAMP_MAX_ACTORS];
 	DWORD					ulUnk1[SAMP_MAX_ACTORS];
-} __attribute__ ((packed));
+};
 
-struct stChatBubbleInfo
+struct SFL_ChatBubbleInfo
 {
-	struct stChatPlayer		chatBubble[SAMP_MAX_PLAYERS];
-} __attribute__ ((packed));
+	struct SFL_ChatPlayer	chatBubble[SAMP_MAX_PLAYERS];
+};
 
-struct stStreamedOutPlayerInfo
+struct SFL_StreamedOutPlayerInfo
 {
 	int						iPlayerID[SAMP_MAX_PLAYERS];
 	float					fPlayerPos[SAMP_MAX_PLAYERS][3];
-} __attribute__ ((packed));
+};
+
+#pragma pack(pop)
 ]]

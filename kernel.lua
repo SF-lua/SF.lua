@@ -1,8 +1,7 @@
 --[[
 	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for development.
-	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (ñ) 2018.
+	Thanks BH Team for the source code of s0beit provided.
+	fishlake-scripts.ru & blast.hk (c) 2018-2019.
 ]]
 local ffi = require 'ffi'
 local memory = require 'memory'
@@ -87,7 +86,7 @@ typedef void(__stdcall *RPC_CALL)(BYTE*id, char* bitStream, int priority, int re
 local k = {}
 
 function k.getStruct(struct_name, mem)
-	return ffi.cast('struct '..struct_name..'*', mem)
+	return ffi.cast('struct SFL_'..struct_name..'*', mem)
 end
 
 function k.getAddressByCData(cdata)

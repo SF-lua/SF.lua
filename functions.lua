@@ -1,8 +1,7 @@
 --[[
 	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for development.
-	Structuers/addresses/other were taken in s0beit 0.3.7: https://github.com/BlastHackNet/mod_s0beit_sa
-	http://blast.hk/ (c) 2018-2019.
+	Thanks BH Team for the source code of s0beit provided.
+	fishlake-scripts.ru & blast.hk (c) 2018-2019.
 ]]
 local ffi = require 'ffi'
 local bit = require 'bit'
@@ -14,7 +13,7 @@ local bs = require 'SAMPFUNCSLUA.bitstream'
 local cast, new, str, typeof, sizeof, offsetof = ffi.cast, ffi.new, ffi.string, ffi.typeof, ffi.sizeof, ffi.offsetof
 local nchar, ncmd, i16, i32, float = typeof('char[?]'), typeof('CMDPROC'), typeof('int16_t[1]'), typeof('int32_t[1]'), typeof('float[1]')
 
-local st_dialog, st_input, st_chat, st_samp, st_scoreboard, st_pools, st_player, st_textdraw, st_object, st_gangzone, st_text3d, st_car, st_pickup
+local samp_infos = {}
 
 local SAMP_INFO								= 0x21A0F8
 local SAMP_DIALOG_INFO						= 0x21A0B8
@@ -54,14 +53,12 @@ local sf = {
 	DIALOG_STYLE_LIST = 2,
 	DIALOG_STYLE_PASSWORD = 3,
 	DIALOG_STYLE_TABLIST = 4,
-	DIALOG_STYLE_TABLIST_HEADERS = 5
+	DIALOG_STYLE_TABLIST_HEADERS = 5,
+
+	_VERSION = '1.0-beta'
 }
 
 local samp_dll = getModuleHandle('samp.dll')
-local color_table = cast('DWORD*', samp_dll + SAMP_COLOR)
-
-local anim_list = new('char[1811][36]')
-ffi.copy(anim_list, cast('void*', samp_dll + SAMP_ANIM), sizeof(anim_list))
 
 local sampFunctions = {
 	-- stSAMP
@@ -76,6 +73,7 @@ local sampFunctions = {
 	getElementSturct = cast('char*(__thiscall *)(void* this, int a, int b)', samp_dll + 0x82C50),
 	getEditboxText = cast('char*(__thiscall *)(void* this)', samp_dll + 0x81030),
 	setEditboxText = cast('void(__thiscall *)(void* this, char* text,int i)', samp_dll + 0x80F60),
+
 	-- stGameInfo
 	showCursor = cast('void (__thiscall*)(void* this, int type, bool show)', samp_dll + 0x9BD30),
 	cursorUnlockActorCam = cast('void (__thiscall*)(void* this)', samp_dll + 0x9BC10),
@@ -99,7 +97,7 @@ local sampFunctions = {
 	disableInput = cast('void(__thiscall *)(void* this)', samp_dll + 0x658E0),
 
 	-- stTextdrawPool
-	createTextDraw = cast('void(__thiscall *)(void* this, WORD id, struct stTextDrawTransmit* transmit, PCHAR text)', samp_dll + 0x1AE20),
+	createTextDraw = cast('void(__thiscall *)(void* this, WORD id, struct SFL_TextDrawTransmit* transmit, PCHAR text)', samp_dll + 0x1AE20),
 	deleteTextDraw = cast('void(__thiscall *)(void* this, WORD id)', samp_dll + 0x1AD00),
 
 	-- stScoreboardInfo
@@ -117,30 +115,8 @@ local sampFunctions = {
 	sendDeathMessage = cast('void(__thiscall*)(void *this, PCHAR killer, PCHAR killed, DWORD clKiller, DWORD clKilled, BYTE reason)', samp_dll + 0x66930),
 
 	-- BitStream
-	readDecodeString = cast('void (__thiscall*)(void* this, char* buf, size_t size_buf, BitStream* bs, int unk)', samp_dll + 0x507E0),
-	writeEncodeString = cast('void (__thiscall*)(void* this, const char* str, size_t size_str, BitStream* bs, int unk)', samp_dll + 0x506B0)
-}
-
-local originals = {}
-
-local hooks = {
-	onSendRpc = {
-		function(id, bitstream, priority, reliability, orderingChannel, shiftTs)
-			local oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs = id, bitstream, priority, reliability, orderingChannel, shiftTs
-			if type(onSendRpc) == 'function' then
-				local process, id, bitstream, priority, reliability, orderingChannel, shiftTs = onSendRpc(id[0], kernel.getAddressByCData(bitstream), priority, reliability, orderingChannel, shiftTs)
-				if process ~= false then
-					if id then oid[0] = id end
-					if bitstream then obitstream = cast('char*', bitstream) end
-					opriority = priority or opriority
-					oreliability = reliability or oreliability
-					oorderingChannel = orderingChannel or oorderingChannel
-					if shiftTs ~= nil then oshiftTs = shiftTs end
-					originals.onSendRpc(oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs)
-				end
-			else originals.onSendRpc(oid, obitstream, opriority, oreliability, oorderingChannel, oshiftTs) end
-		end
-	}
+	readDecodeString = cast('void (__thiscall*)(void* this, char* buf, size_t size_buf, SFL_BitStream* bs, int unk)', samp_dll + 0x507E0),
+	writeEncodeString = cast('void (__thiscall*)(void* this, const char* str, size_t size_str, SFL_BitStream* bs, int unk)', samp_dll + 0x506B0)
 }
 
 --- Standart functions
@@ -160,118 +136,139 @@ end
 -- Pointers to structures
 
 function sf.sampGetSampInfoPtr()
-	return memory.getint32( sf.sampGetBase() + SAMP_INFO)
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
+	return memory.getint32( sf.sampGetBase() + SAMP_INFO )
 end
 
 function sf.sampGetDialogInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_DIALOG_INFO )
 end
 
 function sf.sampGetMiscInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_MISC_INFO )
 end
 
 function sf.sampGetInputInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_INPUIT_INFO )
 end
 
 function sf.sampGetChatInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_CHAT_INFO )
 end
 
 function sf.sampGetKillInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_KILL_INFO )
 end
 
 function sf.sampGetSampPoolsPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_pools)
+	return kernel.getAddressByCData(samp_infos.pools)
 end
 
 function sf.sampGetServerSettingsPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_samp.pSettings)
+	return kernel.getAddressByCData(samp_infos.samp.pSettings)
 end
 
 function sf.sampGetTextdrawPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_textdraw)
+	return kernel.getAddressByCData(samp_infos.textdraw)
 end
 
 function sf.sampGetObjectPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_object)
+	return kernel.getAddressByCData(samp_infos.object)
 end
 
 function sf.sampGetGangzonePoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_gangzone)
+	return kernel.getAddressByCData(samp_infos.gangzone)
 end
 
 function sf.sampGetTextlabelPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_text3d)
+	return kernel.getAddressByCData(samp_infos.text3d)
 end
 
 function sf.sampGetTextlabelPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_text3d)
+	return kernel.getAddressByCData(samp_infos.text3d)
 end
 
 function sf.sampGetPlayerPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_player)
+	return kernel.getAddressByCData(samp_infos.player)
 end
 
 function sf.sampGetVehiclePoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_car)
+	return kernel.getAddressByCData(samp_infos.car)
 end
 
 function sf.sampGetPickupPoolPtr()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_pickup)
+	return kernel.getAddressByCData(samp_infos.pickup)
 end
 
 function sf.sampGetRakclientInterface()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return kernel.getAddressByCData(st_samp.pRakClientInterface)
+	return kernel.getAddressByCData(samp_infos.samp.pRakClientInterface)
 end
 
+local availables = {
+	{ 'sampGetSampInfoPtr', 'samp', 'SAMP' },
+	{ 'sampGetDialogInfoPtr', 'dialog', 'DialogInfo' },
+	{ 'sampGetMiscInfoPtr', 'misc', 'GameInfo' },
+	{ 'sampGetInputInfoPtr', 'input', 'InputInfo' },
+	{ 'sampGetChatInfoPtr', 'chat', 'ChatInfo' },
+	{ 'sampGetKillInfoPtr', 'killinfo', 'KillInfo' },
+	{ 'sampGetScoreboardInfoPtr', 'scoreboard', 'ScoreboardInfo' }
+}
+
 function sf.isSampAvailable()
-	if sf.isSampLoaded() and sf.sampGetSampInfoPtr() > 0x0 then
-		if not st_dialog then
-			st_dialog = kernel.getStruct('stDialogInfo', sf.sampGetDialogInfoPtr())
-			st_input = kernel.getStruct('stInputInfo', sf.sampGetInputInfoPtr())
-			st_chat = kernel.getStruct('stChatInfo', sf.sampGetChatInfoPtr())
-			st_samp = kernel.getStruct('stSAMP', sf.sampGetSampInfoPtr())
-			st_scoreboard = kernel.getStruct('stScoreboardInfo', sf.sampGetScoreboardInfoPtr())
-			st_killinfo = kernel.getStruct('stKillInfo', sf.sampGetKillInfoPtr())
-			st_misc = kernel.getStruct('stGameInfo', sf.sampGetMiscInfoPtr())
-			st_pools = st_samp.pPools
-			st_player = st_pools.pPlayer
-			st_textdraw = st_pools.pTextdraw
-			st_object = st_pools.pObject
-			st_gangzone = st_pools.pGangzone
-			st_text3d = st_pools.pText3D
-			st_car = st_pools.pVehicle
-			st_pickup = st_pools.pPickup
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
+	local addr, result = 0, true
+	for i = 1, #availables do
+		local ptr = availables[i]
+		addr = sf[ ptr[1] ]()
+		result = result and addr > 0
+		if result then
+			samp_infos[ ptr[2] ] = kernel.getStruct(ptr[3], addr)
+		else
+			return result
 		end
-		return true
 	end
-	return false
+	local anim_list = new('char[1811][36]')
+	ffi.copy(anim_list, cast('void*', samp_dll + SAMP_ANIM), sizeof(anim_list))
+	samp_infos.color_table = cast('DWORD*', samp_dll + SAMP_COLOR)
+	samp_infos.anim_list = anim_list
+
+	samp_infos.pools = samp_infos.samp.pPools
+	samp_infos.player = samp_infos.pools.pPlayer
+	samp_infos.textdraw = samp_infos.pools.pTextdraw
+	samp_infos.object = samp_infos.pools.pObject
+	samp_infos.gangzone = samp_infos.pools.pGangzone
+	samp_infos.text3d = samp_infos.pools.pText3D
+	samp_infos.car = samp_infos.pools.pVehicle
+	samp_infos.pickup = samp_infos.pools.pPickup
+	return result
 end
 
 -- stSAMP
 
 function sf.sampGetCurrentServerName()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(st_samp.szHostname)
+	return str(samp_infos.samp.szHostname)
 end
 
 function sf.sampGetCurrentServerAddress()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(st_samp.szIP), st_samp.ulPort
+	return str(samp_infos.samp.szIP), samp_infos.samp.ulPort
 end
 
 function sf.sampGetGamestate()
@@ -284,7 +281,7 @@ function sf.sampGetGamestate()
 		[18] = 4,
 		[13] = 5
 	}
-	return states[st_samp.iGameState]
+	return states[samp_infos.samp.iGameState]
 end
 
 function sf.sampSetGamestate(gamestate)
@@ -293,7 +290,7 @@ function sf.sampSetGamestate(gamestate)
 	local states = {
 		[0] = 0, 9, 15, 14, 18, 13
 	}
-	st_samp.iGameState = states[gamestate]
+	samp_infos.samp.iGameState = states[gamestate]
 end
 
 function sf.sampSendScmEvent(event, id, param1, param2)
@@ -331,13 +328,13 @@ end
 function sf.sampGetAnimationNameAndFile(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	local name, file = ffi.string(anim_list[id - 1]):match('(.*):(.*)')
+	local name, file = ffi.string(samp_infos.anim_list[id - 1]):match('(.*):(.*)')
 	return name or '', file or ''
 end
 
 function sf.sampFindAnimationIdByNameAndFile(file, name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	for i = 0, sizeof(anim_list) / 36 do
+	for i = 0, sizeof(samp_infos.anim_list) / 36 do
 		local n, f = sf.sampGetAnimationNameAndFile(i)
 		if n == name and f == file then return i end
 	end
@@ -348,27 +345,27 @@ end
 
 function sf.sampIsDialogActive()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_dialog.iIsActive == 1
+	return samp_infos.dialog.iIsActive == 1
 end
 
 function sf.sampGetDialogCaption()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(st_dialog.szCaption)
+	return str(samp_infos.dialog.szCaption)
 end
 
 function sf.sampGetCurrentDialogId()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_dialog.DialogID
+	return samp_infos.dialog.DialogID
 end
 
 function sf.sampGetDialogText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(st_dialog.pText)
+	return str(samp_infos.dialog.pText)
 end
 
 function sf.sampGetCurrentDialogType()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_dialog.iType
+	return samp_infos.dialog.iType
 end
 
 function sf.sampShowDialog(id, caption, text, button1, button2, style)
@@ -377,7 +374,7 @@ function sf.sampShowDialog(id, caption, text, button1, button2, style)
 	local text = cast('PCHAR', tostring(text))
 	local button1 = cast('PCHAR', tostring(button1))
 	local button2 = cast('PCHAR', tostring(button2))
-	sampFunctions.showDialog(st_dialog, id, style, caption, text, button1, button2, false)
+	sampFunctions.showDialog(samp_infos.dialog, id, style, caption, text, button1, button2, false)
 end
 
 function sf.sampGetCurrentDialogListItem()
@@ -394,50 +391,51 @@ end
 
 function sf.sampCloseCurrentDialogWithButton(button)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.closeDialog(st_dialog, button)
+	sampFunctions.closeDialog(samp_infos.dialog, button)
 end
 
 function sf.sampGetCurrentDialogEditboxText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local char = sampFunctions.getEditboxText(st_dialog.pEditBox)
+	local char = sampFunctions.getEditboxText(samp_infos.dialog.pEditBox)
 	return str(char)
 end
 
 function sf.sampSetCurrentDialogEditboxText(text)
-	sampFunctions.setEditboxText(st_dialog.pEditBox,ffi.cast("char*",text),0)
+	assert(sf.isSampAvailable(), 'SA-MP is not available.')
+	sampFunctions.setEditboxText(samp_infos.dialog.pEditBox, ffi.cast('PCHAR', text), 0)
 end
 
 function sf.sampIsDialogClientside()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_dialog.bServerside ~= 0
+	return samp_infos.dialog.bServerside ~= 0
 end
 
 function sf.sampSetDialogClientside(client)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	st_dialog.bServerside = client and 0 or 1
+	samp_infos.dialog.bServerside = client and 0 or 1
 end
 
 -- stGameInfo
 
 function sf.sampToggleCursor(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.showCursor(st_misc, showed == true and 3 or 0, showed)
-	if showed ~= true then sampFunctions.cursorUnlockActorCam(st_misc) end
+	sampFunctions.showCursor(samp_infos.misc, showed == true and 3 or 0, showed)
+	if showed ~= true then sampFunctions.cursorUnlockActorCam(samp_infos.misc) end
 end
 
 function sf.sampIsCursorActive()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_misc.iCursorMode > 0
+	return samp_infos.misc.iCursorMode > 0
 end
 
 function sf.sampGetCursorMode()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_misc.iCursorMode
+	return samp_infos.misc.iCursorMode
 end
 
 function sf.sampSetCursorMode(mode)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	st_misc.iCursorMode = tonumber(mode) or 0
+	samp_infos.misc.iCursorMode = tonumber(mode) or 0
 end
 
 -- stPlayerPool
@@ -446,45 +444,45 @@ function sf.sampIsPlayerConnected(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	assert(id >= 0 and id < sf.SAMP_MAX_PLAYERS, 'Max IDs 1004. Current ID: '..id)
-	return st_player.iIsListed[id] == 1 or sf.sampGetLocalPlayerId() == id
+	return samp_infos.player.iIsListed[id] == 1 or sf.sampGetLocalPlayerId() == id
 end
 
 function sf.sampGetPlayerNickname(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char
-	if sf.sampGetLocalPlayerId() == id then char = cast('PCSTR', st_player.strLocalPlayerName)
-	elseif sf.sampIsPlayerConnected(id) then char = cast('PCSTR', st_player.pRemotePlayer[id].strPlayerName) end
+	if sf.sampGetLocalPlayerId() == id then char = cast('PCSTR', samp_infos.player.strLocalPlayerName)
+	elseif sf.sampIsPlayerConnected(id) then char = cast('PCSTR', samp_infos.player.pRemotePlayer[id].strPlayerName) end
 	return char and str(char) or ''
 end
 
 function sf.sampSpawnPlayer()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.reqSpawn(st_player.pLocalPlayer)
-	sampFunctions.spawn(st_player.pLocalPlayer)
+	sampFunctions.reqSpawn(samp_infos.player.pLocalPlayer)
+	sampFunctions.spawn(samp_infos.player.pLocalPlayer)
 end
 
 function sf.sampSendChat(msg)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = cast('PCHAR', tostring(msg))
 	if char[0] == 47 then
-		sampFunctions.sendCMD(st_input, char)
+		sampFunctions.sendCMD(samp_infos.input, char)
 	else
-		sampFunctions.say(st_player.pLocalPlayer, char)
+		sampFunctions.say(samp_infos.player.pLocalPlayer, char)
 	end
 end
 
 function sf.sampIsPlayerNpc(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return sf.sampIsPlayerConnected(id) and st_player.pRemotePlayer[id].iIsNPC == 1
+	return sf.sampIsPlayerConnected(id) and samp_infos.player.pRemotePlayer[id].iIsNPC == 1
 end
 
 function sf.sampGetPlayerScore(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	local score = 0
-	if sf.sampGetLocalPlayerId() == id then score = st_player.iLocalPlayerScore
-	elseif sf.sampIsPlayerConnected(id) then score = st_player.pRemotePlayer[id].iScore end
+	if sf.sampGetLocalPlayerId() == id then score = samp_infos.player.iLocalPlayerScore
+	elseif sf.sampIsPlayerConnected(id) then score = samp_infos.player.pRemotePlayer[id].iScore end
 	return score
 end
 
@@ -492,36 +490,36 @@ function sf.sampGetPlayerPing(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	local ping = 0
-	if sf.sampGetLocalPlayerId() == id then ping = st_player.iLocalPlayerPing
-	elseif sf.sampIsPlayerConnected(id) then ping = st_player.pRemotePlayer[id].iPing end
+	if sf.sampGetLocalPlayerId() == id then ping = samp_infos.player.iLocalPlayerPing
+	elseif sf.sampIsPlayerConnected(id) then ping = samp_infos.player.pRemotePlayer[id].iPing end
 	return ping
 end
 
 function sf.sampRequestClass(class)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	class = tonumber(class) or 0
-	sampFunctions.reqClass(st_player.pLocalPlayer, class)
+	sampFunctions.reqClass(samp_infos.player.pLocalPlayer, class)
 end
 
 function sf.sampGetPlayerColor(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampIsPlayerConnected(id) or sf.sampGetLocalPlayerId() == id then
-		return kernel.convertRGBAToARGB(color_table[id])
+		return kernel.convertRGBAToARGB(samp_infos.color_table[id])
 	end
 end
 
 function sf.sampSendInteriorChange(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	sampFunctions.sendInt(st_player.pLocalPlayer, id)
+	sampFunctions.sendInt(samp_infos.player.pLocalPlayer, id)
 end
 
 function sf.sampForceUnoccupiedSyncSeatId(id, seat)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	seat = tonumber(seat) or 0
-	sampFunctions.forceUnocSync(st_player.pLocalPlayer, id, seat)
+	sampFunctions.forceUnocSync(samp_infos.player.pLocalPlayer, id, seat)
 end
 
 function sf.sampGetCharHandleBySampPlayerId(id)
@@ -529,7 +527,7 @@ function sf.sampGetCharHandleBySampPlayerId(id)
 	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return true, playerPed
 	elseif sf.sampIsPlayerDefined(id) then
-		return true, getCharPointerHandle(kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.pGTA_Ped))
+		return true, getCharPointerHandle(kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.pGTA_Ped))
 	end
 	return false, -1
 end
@@ -550,7 +548,7 @@ function sf.sampGetPlayerArmor(id)
 	id = tonumber(id) or 0
 	if sf.sampIsPlayerDefined(id) then
 		if id == sf.sampGetLocalPlayerId() then return getCharArmour(playerPed) end
-		return st_player.pRemotePlayer[id].pPlayerData.fActorArmor
+		return samp_infos.player.pRemotePlayer[id].pPlayerData.fActorArmor
 	end
 	return 0
 end
@@ -560,7 +558,7 @@ function sf.sampGetPlayerHealth(id)
 	id = tonumber(id) or 0
 	if sf.sampIsPlayerDefined(id) then
 		if id == sf.sampGetLocalPlayerId() then return getCharHealth(playerPed) end
-		return st_player.pRemotePlayer[id].pPlayerData.fActorHealth
+		return samp_infos.player.pRemotePlayer[id].pPlayerData.fActorHealth
 	end
 	return 0
 end
@@ -569,13 +567,13 @@ function sf.sampSetSpecialAction(action)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	action = tonumber(action) or 0
 	if sf.sampIsPlayerDefined(sf.sampGetLocalPlayerId()) then
-		sampFunctions.setAction(st_player.pLocalPlayer, action)
+		sampFunctions.setAction(samp_infos.player.pLocalPlayer, action)
 	end
 end
 
 function sf.sampGetPlayerCount(streamed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	if not streamed then return st_scoreboard.iPlayersCount - 1 end
+	if not streamed then return samp_infos.scoreboard.iPlayersCount - 1 end
 	local players = 0
 	for i = 0, sf.SAMP_MAX_PLAYERS - 1 do
 		if i ~= sf.sampGetLocalPlayerId() then
@@ -607,7 +605,7 @@ end
 function sf.sampGetPlayerSpecialAction(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[i].pPlayerData.byteSpecialAction end
+	if sf.sampIsPlayerConnected(id) then return samp_infos.player.pRemotePlayer[i].pPlayerData.byteSpecialAction end
 	return -1
 end
 
@@ -616,8 +614,8 @@ function sf.sampStorePlayerOnfootData(id, data)
 	id = tonumber(id) or 0
 	data = tonumber(data) or 0
 	local struct
-	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.onFootData
-	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.onFootData end
+	if id == sf.sampGetLocalPlayerId() then struct = samp_infos.player.pLocalPlayer.onFootData
+	elseif sf.sampIsPlayerDefined(id) then struct = samp_infos.player.pRemotePlayer[id].pPlayerData.onFootData end
 	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct onFootData')) end
 end
 
@@ -625,7 +623,7 @@ function sf.sampIsPlayerPaused(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if id == sf.sampGetLocalPlayerId() then return false end
-	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[id].pPlayerData.iAFKState == 0 end
+	if sf.sampIsPlayerConnected(id) then return samp_infos.player.pRemotePlayer[id].pPlayerData.iAFKState == 0 end
 end
 
 function sf.sampStorePlayerIncarData(id, data)
@@ -633,8 +631,8 @@ function sf.sampStorePlayerIncarData(id, data)
 	id = tonumber(id) or 0
 	data = tonumber(data) or 0
 	local struct
-	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.inCarData
-	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.inCarData end
+	if id == sf.sampGetLocalPlayerId() then struct = samp_infos.player.pLocalPlayer.inCarData
+	elseif sf.sampIsPlayerDefined(id) then struct = samp_infos.player.pRemotePlayer[id].pPlayerData.inCarData end
 	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stInCarData')) end
 end
 
@@ -643,8 +641,8 @@ function sf.sampStorePlayerPassengerData(id, data)
 	id = tonumber(id) or 0
 	data = tonumber(data) or 0
 	local struct
-	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.passengerData
-	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.passengerData end
+	if id == sf.sampGetLocalPlayerId() then struct = samp_infos.player.pLocalPlayer.passengerData
+	elseif sf.sampIsPlayerDefined(id) then struct = samp_infos.player.pRemotePlayer[id].pPlayerData.passengerData end
 	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stPassengerData')) end
 end
 
@@ -653,8 +651,8 @@ function sf.sampStorePlayerTrailerData(id, data)
 	id = tonumber(id) or 0
 	data = tonumber(data) or 0
 	local struct
-	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.trailerData
-	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.trailerData end
+	if id == sf.sampGetLocalPlayerId() then struct = samp_infos.player.pLocalPlayer.trailerData
+	elseif sf.sampIsPlayerDefined(id) then struct = samp_infos.player.pRemotePlayer[id].pPlayerData.trailerData end
 	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stTrailerData')) end
 end
 
@@ -663,47 +661,47 @@ function sf.sampStorePlayerAimData(id, data)
 	id = tonumber(id) or 0
 	data = tonumber(data) or 0
 	local struct
-	if id == sf.sampGetLocalPlayerId() then struct = st_player.pLocalPlayer.aimData
-	elseif sf.sampIsPlayerDefined(id) then struct = st_player.pRemotePlayer[id].pPlayerData.aimData end
+	if id == sf.sampGetLocalPlayerId() then struct = samp_infos.player.pLocalPlayer.aimData
+	elseif sf.sampIsPlayerDefined(id) then struct = samp_infos.player.pRemotePlayer[id].pPlayerData.aimData end
 	if struct then memory.copy(data, kernel.getAddressByCData(struct), sizeof('struct stAimData')) end
 end
 
 function sf.sampSendSpawn()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.spawn(st_player.pLocalPlayer)
+	sampFunctions.spawn(samp_infos.player.pLocalPlayer)
 end
 
 function sf.sampGetPlayerAnimationId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if id == sf.sampGetLocalPlayerId() then return st_player.pLocalPlayer.sCurrentAnimID end
-	if sf.sampIsPlayerConnected(id) then return st_player.pRemotePlayer[id].pPlayerData.onFootData.sCurrentAnimationID end
+	if id == sf.sampGetLocalPlayerId() then return samp_infos.player.pLocalPlayer.sCurrentAnimID end
+	if sf.sampIsPlayerConnected(id) then return samp_infos.player.pRemotePlayer[id].pPlayerData.onFootData.sCurrentAnimationID end
 end
 
 function sf.sampSetLocalPlayerName(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local name = tostring(name)
 	assert(#name <= sf.SAMP_MAX_PLAYER_NAME, 'Limit name - '..sf.SAMP_MAX_PLAYER_NAME..'.')
-	sampFunctions.setName(kernel.getAddressByCData(st_player) + offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
+	sampFunctions.setName(kernel.getAddressByCData(samp_infos.player) + offsetof('struct stPlayerPool', 'pVTBL_txtHandler'), name, #name)
 end
 
 function sf.sampGetPlayerStructPtr(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(st_player.pLocalPlayer) end
+	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(samp_infos.player.pLocalPlayer) end
 	if sf.sampIsPlayerConnected(id) then
-		return kernel.getAddressByCData(st_player.pRemotePlayer[id])
+		return kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id])
 	end
 end
 
 function sf.sampSendEnterVehicle(id, passenger)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.sendEnterVehicle(st_player.pLocalPlayer, id, passenger)
+	sampFunctions.sendEnterVehicle(samp_infos.player.pLocalPlayer, id, passenger)
 end
 
 function sf.sampSendExitVehicle(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.sendExitVehicle(st_player.pLocalPlayer, id)
+	sampFunctions.sendExitVehicle(samp_infos.player.pLocalPlayer, id)
 end
 
 -- stInputInfo
@@ -711,10 +709,10 @@ end
 function sf.sampUnregisterChatCommand(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	for i = 0, sf.SAMP_MAX_CLIENTCMDS - 1 do
-		if str(st_input.szCMDNames[i]) == tostring(name) then
-			st_input.szCMDNames[i] = nchar(33)
-			st_input.pCMDs[i] = ncmd()
-			st_input.iCMDCount = st_input.iCMDCount - 1
+		if str(samp_infos.input.szCMDNames[i]) == tostring(name) then
+			samp_infos.input.szCMDNames[i] = ffi.new('char[33]') --nchar(33)
+			samp_infos.input.pCMDs[i] = ffi.NULL
+			samp_infos.input.iCMDCount = samp_infos.input.iCMDCount - 1
 			return true
 		end
 	end
@@ -725,42 +723,42 @@ function sf.sampRegisterChatCommand(name, function_)
 	local name = tostring(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	assert(type(function_) == 'function', '"'..tostring(function_)..'" is not function.')
-	assert(st_input.iCMDCount < sf.SAMP_MAX_CLIENTCMDS, 'Couldn\'t initialize "'..name..'". Maximum command amount reached.')
+	assert(samp_infos.input.iCMDCount < sf.SAMP_MAX_CLIENTCMDS, 'Couldn\'t initialize "'..name..'". Maximum command amount reached.')
 	assert(#name < 30, 'Command name "'..tostring(name)..'" was too long.')
 	sf.sampUnregisterChatCommand(name)
 	local char = cast('PCHAR', name)
 	local func = ncmd(function(args)
 		function_(str(args))
 	end)
-	sampFunctions.regCMD(st_input, char, func)
+	sampFunctions.regCMD(samp_infos.input, char, func)
 	return true
 end
 
 function sf.sampSetChatInputText(text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.setEditboxText(st_input.pDXUTEditBox,ffi.cast("char *", text), 0)
+	sampFunctions.setEditboxText(samp_infos.input.pDXUTEditBox,ffi.cast("char *", text), 0)
 end
 
 function sf.sampGetChatInputText()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return str(sampFunctions.getEditboxText(st_input.pDXUTEditBox))
+	return str(sampFunctions.getEditboxText(samp_infos.input.pDXUTEditBox))
 end
 
 function sf.sampSetChatInputEnabled(enabled)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions[enabled and 'enableInput' or 'disableInput'](st_input)
+	sampFunctions[enabled and 'enableInput' or 'disableInput'](samp_infos.input)
 end
 
 function sf.sampIsChatInputActive()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_input.pDXUTEditBox.bIsChatboxOpen == 1
+	return samp_infos.input.pDXUTEditBox.bIsChatboxOpen == 1
 end
 
 function sf.sampIsChatCommandDefined(name)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	name = tostring(name)
 	for i = 0, sf.SAMP_MAX_CLIENTCMDS - 1 do
-		if str(st_input.szCMDNames[i]) == name then return true end
+		if str(samp_infos.input.szCMDNames[i]) == name then return true end
 	end
 	return false
 end
@@ -768,7 +766,7 @@ end
 function sf.sampProcessChatInput(text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = cast('PCHAR', tostring(text))
-	sampFunctions.say(st_player.pLocalPlayer, char)
+	sampFunctions.say(samp_infos.player.pLocalPlayer, char)
 end
 
 -- stChatInfo
@@ -780,28 +778,28 @@ end
 
 function sf.sampGetChatDisplayMode()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_chat.iChatWindowMode
+	return samp_infos.chat.iChatWindowMode
 end
 
 function sf.sampSetChatDisplayMode(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	st_chat.iChatWindowMode = id
+	samp_infos.chat.iChatWindowMode = id
 end
 
 function sf.sampGetChatString(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return str(st_chat.chatEntry[id].szText), str(st_chat.chatEntry[id].szPrefix), st_chat.chatEntry[id].clTextColor, st_chat.chatEntry[id].clPrefixColor
+	return str(samp_infos.chat.chatEntry[id].szText), str(samp_infos.chat.chatEntry[id].szPrefix), samp_infos.chat.chatEntry[id].clTextColor, samp_infos.chat.chatEntry[id].clPrefixColor
 end
 
 function sf.sampSetChatString(id, text, prefix, color_t, color_p)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	st_chat.chatEntry[id].szText = nchar(144, tostring(text))
-	st_chat.chatEntry[id].szPrefix = nchar(28, tostring(prefix))
-	st_chat.chatEntry[id].clTextColor = color_t
-	st_chat.chatEntry[id].clPrefixColor = color_p
+	samp_infos.chat.chatEntry[id].szText = nchar(144, tostring(text))
+	samp_infos.chat.chatEntry[id].szPrefix = nchar(28, tostring(prefix))
+	samp_infos.chat.chatEntry[id].clTextColor = color_t
+	samp_infos.chat.chatEntry[id].clPrefixColor = color_p
 end
 
 function sf.sampIsChatVisible()
@@ -814,23 +812,23 @@ end
 function sf.sampTextdrawIsExists(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return st_textdraw.iIsListed[id] == 1
+	return samp_infos.textdraw.iIsListed[id] == 1
 end
 
 function sf.sampTextdrawCreate(id, text, x, y)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local transmit = new('stTextDrawTransmit[1]', { { fX = x, fY = y } })
-	sampFunctions.createTextDraw(st_textdraw, transmit, cast('PCHAR', tostring(text)))
+	sampFunctions.createTextDraw(samp_infos.textdraw, transmit, cast('PCHAR', tostring(text)))
 end
 
 function sf.sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].byteBox = box
-		st_textdraw.textdraw[id].dwBoxColor = color
-		st_textdraw.textdraw[id].fBoxSizeX = sizeX
-		st_textdraw.textdraw[id].fBoxSizeY = sizeY
+		samp_infos.textdraw.textdraw[id].byteBox = box
+		samp_infos.textdraw.textdraw[id].dwBoxColor = color
+		samp_infos.textdraw.textdraw[id].fBoxSizeX = sizeX
+		samp_infos.textdraw.textdraw[id].fBoxSizeY = sizeY
 	end
 end
 
@@ -838,59 +836,59 @@ function sf.sampTextdrawGetString(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].szText
+		return samp_infos.textdraw.textdraw[id].szText
 	end
 	return ''
 end
 
 function sf.sampTextdrawDelete(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	sampFunctions.deleteTextDraw(st_textdraw, id)
+	sampFunctions.deleteTextDraw(samp_infos.textdraw, id)
 end
 
 function sf.sampTextdrawGetLetterSizeAndColor(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].fLetterWidth, st_textdraw.textdraw[id].fLetterHeight, kernel.convcolor(st_textdraw.textdraw[id].dwLetterColor)
+		return samp_infos.textdraw.textdraw[id].fLetterWidth, samp_infos.textdraw.textdraw[id].fLetterHeight, kernel.convcolor(samp_infos.textdraw.textdraw[id].dwLetterColor)
 	end
 end
 
 function sf.sampTextdrawGetPos(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].fX, st_textdraw.textdraw[id].fY
+		return samp_infos.textdraw.textdraw[id].fX, samp_infos.textdraw.textdraw[id].fY
 	end
 end
 
 function sf.sampTextdrawGetShadowColor(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].byteShadowSize, st_textdraw.textdraw[id].dwShadowColor
+		return samp_infos.textdraw.textdraw[id].byteShadowSize, samp_infos.textdraw.textdraw[id].dwShadowColor
 	end
 end
 
 function sf.sampTextdrawGetOutlineColor(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].byteOutline, st_textdraw.textdraw[id].dwShadowColor
+		return samp_infos.textdraw.textdraw[id].byteOutline, samp_infos.textdraw.textdraw[id].dwShadowColor
 	end
 end
 
 function sf.sampTextdrawGetStyle(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].iStyle
+		return samp_infos.textdraw.textdraw[id].iStyle
 	end
 end
 
 function sf.sampTextdrawGetProportional(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].byteProportional
+		return samp_infos.textdraw.textdraw[id].byteProportional
 	end
 end
 
 function sf.sampTextdrawGetAlign(id)
 	if sf.sampTextdrawIsExists(id) then
-		if st_textdraw.textdraw[id].byteLeft == 1 then
+		if samp_infos.textdraw.textdraw[id].byteLeft == 1 then
 			return 1
-		elseif st_textdraw.textdraw[id].byteCenter == 1 then
+		elseif samp_infos.textdraw.textdraw[id].byteCenter == 1 then
 			return 2
-		elseif st_textdraw.textdraw[id].byteRight == 1 then
+		elseif samp_infos.textdraw.textdraw[id].byteRight == 1 then
 			return 3
 		else
 			return 0
@@ -900,86 +898,86 @@ end
 
 function sf.sampTextdrawGetBoxEnabledColorAndSize(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].byteBox, st_textdraw.textdraw[id].dwBoxColor, st_textdraw.textdraw[id].fBoxSizeX, st_textdraw.textdraw[id].fBoxSizeY
+		return samp_infos.textdraw.textdraw[id].byteBox, samp_infos.textdraw.textdraw[id].dwBoxColor, samp_infos.textdraw.textdraw[id].fBoxSizeX, samp_infos.textdraw.textdraw[id].fBoxSizeY
 	end
 end
 
 function sf.sampTextdrawGetModelRotationZoomVehColor(id)
 	if sf.sampTextdrawIsExists(id) then
-		return st_textdraw.textdraw[id].sModel, st_textdraw.textdraw[id].fRot[1], st_textdraw.textdraw[id].fRot[2], st_textdraw.textdraw[id].fRot[3], st_textdraw.textdraw[id].fZoom, st_textdraw.textdraw[id].sColor[1], st_textdraw.textdraw[id].sColor[2]
+		return samp_infos.textdraw.textdraw[id].sModel, samp_infos.textdraw.textdraw[id].fRot[1], samp_infos.textdraw.textdraw[id].fRot[2], samp_infos.textdraw.textdraw[id].fRot[3], samp_infos.textdraw.textdraw[id].fZoom, samp_infos.textdraw.textdraw[id].sColor[1], samp_infos.textdraw.textdraw[id].sColor[2]
 	end
 end
 
 function sf.sampTextdrawSetLetterSizeAndColor(id, letSizeX, letSizeY, color)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].fLetterWidth = letSizeX
-		st_textdraw.textdraw[id].fLetterHeight = letSizeY
-		st_textdraw.textdraw[id].dwLetterColor = color
+		samp_infos.textdraw.textdraw[id].fLetterWidth = letSizeX
+		samp_infos.textdraw.textdraw[id].fLetterHeight = letSizeY
+		samp_infos.textdraw.textdraw[id].dwLetterColor = color
 	end
 end
 
 function sf.sampTextdrawSetPos(id, posX, posY)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].fX = posX
-		st_textdraw.textdraw[id].fY = posY
+		samp_infos.textdraw.textdraw[id].fX = posX
+		samp_infos.textdraw.textdraw[id].fY = posY
 	end
 end
 
 function sf.sampTextdrawSetString(id, str)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].szText = str
+		samp_infos.textdraw.textdraw[id].szText = str
 	end
 end
 
 function sf.sampTextdrawSetModelRotationZoomVehColor(id, model, rotX, rotY, rotZ, zoom, clr1, clr2)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].sModel = model
-		st_textdraw.textdraw[id].fRot[1] = rotX
-		st_textdraw.textdraw[id].fRot[2] = rotY
-		st_textdraw.textdraw[id].fRot[3] = rotZ
-		st_textdraw.textdraw[id].fZoom = zoom
-		st_textdraw.textdraw[id].sColor[1] = clr1
-		st_textdraw.textdraw[id].sColor[2] = clr2
+		samp_infos.textdraw.textdraw[id].sModel = model
+		samp_infos.textdraw.textdraw[id].fRot[1] = rotX
+		samp_infos.textdraw.textdraw[id].fRot[2] = rotY
+		samp_infos.textdraw.textdraw[id].fRot[3] = rotZ
+		samp_infos.textdraw.textdraw[id].fZoom = zoom
+		samp_infos.textdraw.textdraw[id].sColor[1] = clr1
+		samp_infos.textdraw.textdraw[id].sColor[2] = clr2
 	end
 end
 
 function sf.sampTextdrawSetOutlineColor(id, outline, color)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].byteOutline = outline
-		st_textdraw.textdraw[id].dwShadowColor = color
+		samp_infos.textdraw.textdraw[id].byteOutline = outline
+		samp_infos.textdraw.textdraw[id].dwShadowColor = color
 	end
 end
 
 function sf.sampTextdrawSetShadow(id, shadow, color)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].byteShadowSize = shadow
-		st_textdraw.textdraw[id].dwShadowColor = color
+		samp_infos.textdraw.textdraw[id].byteShadowSize = shadow
+		samp_infos.textdraw.textdraw[id].dwShadowColor = color
 	end
 end
 
 function sf.sampTextdrawSetStyle(id, style)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].iStyle = style
+		samp_infos.textdraw.textdraw[id].iStyle = style
 	end
 end
 
 function sf.sampTextdrawSetProportional(id, proportional)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].byteProportional = proportional
+		samp_infos.textdraw.textdraw[id].byteProportional = proportional
 	end
 end
 
 function sf.sampTextdrawSetAlign(id, align)
 	if sf.sampTextdrawIsExists(id) then
-		st_textdraw.textdraw[id].byteLeft = 0
-		st_textdraw.textdraw[id].byteCenter = 0
-		st_textdraw.textdraw[id].byteRight = 0
+		samp_infos.textdraw.textdraw[id].byteLeft = 0
+		samp_infos.textdraw.textdraw[id].byteCenter = 0
+		samp_infos.textdraw.textdraw[id].byteRight = 0
 		if align == 1 then
-			st_textdraw.textdraw[id].byteLeft = 1
+			samp_infos.textdraw.textdraw[id].byteLeft = 1
 		elseif align == 2 then
-			st_textdraw.textdraw[id].byteCenter = 1
+			samp_infos.textdraw.textdraw[id].byteCenter = 1
 		elseif align == 3 then
-			st_textdraw.textdraw[id].byteRight = 1
+			samp_infos.textdraw.textdraw[id].byteRight = 1
 		end
 	end
 end
@@ -989,15 +987,15 @@ end
 function sf.sampToggleScoreboard(showed)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	if showed then
-		sampFunctions.enableScoreboard(st_scoreboard)
+		sampFunctions.enableScoreboard(samp_infos.scoreboard)
 	else
-		sampFunctions.disableScoreboard(st_scoreboard, true)
+		sampFunctions.disableScoreboard(samp_infos.scoreboard, true)
 	end
 end
 
 function sf.sampIsScoreboardOpen()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_scoreboard.iIsEnabled == 1
+	return samp_infos.scoreboard.iIsEnabled == 1
 end
 
 -- stTextLabelPool
@@ -1007,7 +1005,7 @@ function sf.sampCreate3dText(text, color, x, y, z, dist, i_walls, id, vid)
 	local text = cast('PCHAR', tostring(text))
 	for i = 0, #sf.SAMP_MAX_3DTEXTS - 1 do
 		if not sf.sampIs3dTextDefined(i) then
-			sampFunctions.createTextLabel(st_text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
+			sampFunctions.createTextLabel(samp_infos.text3d, i, text, color, x, y, z, dist, i_walls, id, vid)
 			return i
 		end
 	end
@@ -1017,14 +1015,14 @@ end
 function sf.sampIs3dTextDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return st_text3d.iIsListed[id] == 1
+	return samp_infos.text3d.iIsListed[id] == 1
 end
 
 function sf.sampGet3dTextInfoById(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		local t = st_text3d.textLabel[id]
+		local t = samp_infos.text3d.textLabel[id]
 		return str(t.pText), t.color, t.fPosition[0], t.fPosition[1], t.fPosition[2], t.fMaxViewDistance, t.byteShowBehindWalls == 1, t.sAttachedToPlayerID, t.sAttachedToVehicleID
 	end
 end
@@ -1033,7 +1031,7 @@ function sf.sampSet3dTextString(id, text)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		st_text3d.textLabel[id].pText = cast('PCHAR', tostring(text))
+		samp_infos.text3d.textLabel[id].pText = cast('PCHAR', tostring(text))
 	end
 end
 
@@ -1041,7 +1039,7 @@ function sf.sampDestroy3dText(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
 	if sf.sampIs3dTextDefined(id) then
-		sampFunctions.deleteTextLabel(st_text3d, id)
+		sampFunctions.deleteTextLabel(samp_infos.text3d, id)
 	end
 end
 
@@ -1049,7 +1047,7 @@ function sf.sampCreate3dTextEx(i, text, color, x, y, z, dist, i_walls, id, vid)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	if sf.sampIs3dTextDefined(i) then sf.sampDestroy3dText(i) end
 	local text = cast('PCHAR', tostring(text))
-	sampFunctions.createTextLabel(st_text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
+	sampFunctions.createTextLabel(samp_infos.text3d, id, text, color, x, y, z, dist, i_walls, id, vid)
 end
 
 -- stVehiclePool
@@ -1057,7 +1055,7 @@ end
 function sf.sampGetCarHandleBySampVehicleId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if sf.sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(kernel.getAddressByCData(st_car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
+	if sf.sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(kernel.getAddressByCData(samp_infos.car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
 	return false, -1
 end
 
@@ -1073,189 +1071,187 @@ end
 -- BitStream
 
 function sf.raknetBitStreamReadBool(bitstream)
-	bitstream = bs.new(bitstream)
-	return bs:ReadBit()
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return bitstream:ReadBit()
 end
 
 function sf.raknetBitStreamReadInt8(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(1)
 	bitstream:ReadBits(buf, 8, true)
 	return buf[0]
 end
 
 function sf.raknetBitStreamReadInt16(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = i16()
 	bitstream:ReadBits(buf, 16, true)
 	return buf[0]
 end
 
 function sf.raknetBitStreamReadInt32(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = i32()
 	bitstream:ReadBits(buf, 32, true)
 	return buf[0]
 end
 
 function sf.raknetBitStreamReadFloat(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = float()
 	bitstream:ReadBits(buf, 32, true)
 	return buf[0]
 end
 
 function sf.raknetBitStreamReadBuffer(bitstream, dest, size)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:ReadBits(dest, size * 8, true)
 end
 
 function sf.raknetBitStreamReadString(bitstream, size)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(size + 1)
 	bitstream:ReadBits(buf, size * 8, true)
 	return str(buf)
 end
 
 function sf.raknetBitStreamResetReadPointer(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:ResetReadPointer()
 end
 
 function sf.raknetBitStreamResetWritePointer(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:ResetWritePointer()
 end
 
 function sf.raknetBitStreamIgnoreBits(bitstream, amount)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:IgnoreBits(amount)
 end
 
 function sf.raknetBitStreamSetWriteOffset(bitstream, offset)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:SetWriteOffset(offset)
 end
 
 function sf.raknetBitStreamSetReadOffset(bitstream, offset)
-	bitstream = bs.new(bitstream)
-	bitstream[1].readOffset = offset
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	bitstream.readOffset = offset
 end
 
 function sf.raknetBitStreamGetNumberOfBitsUsed(bitstream)
-	bitstream = bs.new(bitstream)
-	return bitstream[1].numberOfBitsUsed
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return bitstream.numberOfBitsUsed
 end
 
 function sf.raknetBitStreamGetNumberOfBytesUsed(bitstream)
-	bitstream = bs.new(bitstream)
-	return bit.rshift(bitstream[1].numberOfBitsUsed + 7, 3)
+	local bits = sf.raknetBitStreamGetNumberOfBitsUsed(bitstream)
+	return bit.rshift(bits + 7, 3)
 end
 
 function sf.raknetBitStreamGetNumberOfUnreadBits(bitstream)
-	bitstream = bs.new(bitstream)
-	return bitstream[1].numberOfBitsAllocated - bitstream[1].numberOfBitsUsed
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return bitstream.numberOfBitsAllocated - bitstream.numberOfBitsUsed
 end
 
 function sf.raknetBitStreamGetWriteOffset(bitstream)
-	bitstream = bs.new(bitstream)
-	return bitstream[1].numberOfBitsUsed
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return bitstream.numberOfBitsUsed
 end
 
 function sf.raknetBitStreamGetReadOffset(bitstream)
-	bitstream = bs.new(bitstream)
-	return bitstream[1].readOffset
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return bitstream.readOffset
 end
 
 function sf.raknetBitStreamGetDataPtr(bitstream)
-	bitstream = bs.new(bitstream)
-	return kernel.getAddressByCData(bitstream[1].data)
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	return kernel.getAddressByCData(bitstream.data)
 end
 
 function sf.raknetNewBitStream()
-	local bitstream = bs.new()
-	bitstream:BitStream()
-	return kernel.getAddressByCData(bitstream[1])
+	local bitstream = bs()
+	return kernel.getAddressByCData(bitstream)
 end
 
 function sf.raknetDeleteBitStream(bitstream)
-	bitstream = bs.new(bitstream)
-	bitstream:FBitStream()
+	bitstream = kernel.getStruct('BitStream', bitstream)
+	bitstream:__gc()
 end
 
 function sf.raknetResetBitStream(bitstream)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:Reset()
 end
 
 function sf.raknetBitStreamWriteBool(bitstream, value)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	if value then bitstream:Write1()
 	else bitstream:Write0() end
 end
 
 function sf.raknetBitStreamWriteInt8(bitstream, value)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(1, value)
 	bitstream:WriteBits(buf, 8, true)
 end
 
 function sf.raknetBitStreamWriteInt16(bitstream, value)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = i16(value)
 	bitstream:WriteBits(buf, 16, true)
 end
 
 function sf.raknetBitStreamWriteInt32(bitstream, value)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = i32(value)
 	bitstream:WriteBits(buf, 32, true)
 end
 
 function sf.raknetBitStreamWriteFloat(bitstream, value)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = float(value)
 	bitstream:WriteBits(buf, 32, true)
 end
 
 function sf.raknetBitStreamWriteBuffer(bitstream, dest, size)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	bitstream:WriteBits(dest, size * 8, true)
 end
 
 function sf.raknetBitStreamWriteString(bitstream, str)
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(#str + 1, str)
 	bitstream:WriteBits(buf, #str * 8, true)
 end
 
 function sf.raknetBitStreamDecodeString(bitstream, size)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(size + 1)
 	local this = cast('void**', samp_dll + 0x10D894)
-	sampFunctions.readDecodeString(this[0], buf, size, bitstream[1], 0)
+	sampFunctions.readDecodeString(this[0], buf, size, bitstream, 0)
 	return str(buf)
 end
 
 function sf.raknetBitStreamEncodeString(bitstream, str)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	bitstream = bs.new(bitstream)
+	bitstream = kernel.getStruct('BitStream', bitstream)
 	local buf = nchar(#str + 1, str)
 	local this = cast('void**', samp_dll + 0x10D894)
-	sampFunctions.writeEncodeString(this[0], buf, #str, bitstream[1], 0)
+	sampFunctions.writeEncodeString(this[0], buf, #str, bitstream, 0)
 end
 
 -- RakClient
 
 function sf.sampSendDeathByPlayer(id, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local bitstream = bs.new()
-	bitstream:BitStream()
+	local bitstream = bs()
 	bitstream:WriteBits(nchar(1, reason), 8, true)
 	bitstream:WriteBits(i16(id), 16, true)
-	sf.raknetSendRpcEx(53, kernel.getAddressByCData(bitstream[1]), 1, 8, 0, false)
-	bitstream:FBitStream()
+	sf.raknetSendRpcEx(53, kernel.getAddressByCData(bitstream), 1, 8, 0, false)
+	bitstream:__gc()
 end
 
 function sf.raknetSendRpcEx(rpc, bitstream, priority, reliability, channel, timestamp)
@@ -1476,7 +1472,7 @@ end
 function sf.sampIsVehicleDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	return st_car.iIsListed[id] == 1 and kernel.getAddressByCData(st_car.pSAMP_Vehicle[id]) > 0 and kernel.getAddressByCData(st_car.pSAMP_Vehicle[id].pGTA_Vehicle) > 0
+	return samp_infos.car.iIsListed[id] == 1 and kernel.getAddressByCData(samp_infos.car.pSAMP_Vehicle[id]) > 0 and kernel.getAddressByCData(samp_infos.car.pSAMP_Vehicle[id].pGTA_Vehicle) > 0
 end
 
 -- stPlayerPool
@@ -1484,9 +1480,9 @@ end
 function sf.sampIsPlayerDefined(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(st_player.pLocalPlayer) > 0 end
-	return sf.sampIsPlayerConnected(id) and kernel.getAddressByCData(st_player.pRemotePlayer[id]) > 0 and kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData) > 0 and
-	kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor) > 0 and kernel.getAddressByCData(st_player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.actor_info) > 0
+	if id == sf.sampGetLocalPlayerId() then return kernel.getAddressByCData(samp_infos.player.pLocalPlayer) > 0 end
+	return sf.sampIsPlayerConnected(id) and kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id]) > 0 and kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id].pPlayerData) > 0 and
+	kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id].pPlayerData.pSAMP_Actor) > 0 and kernel.getAddressByCData(samp_infos.player.pRemotePlayer[id].pPlayerData.pSAMP_Actor.actor_info) > 0
 end
 
 function sf.sampGetLocalPlayerNickname()
@@ -1501,7 +1497,7 @@ end
 
 function sf.sampGetLocalPlayerId()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	return st_player.sLocalPlayerID
+	return samp_infos.player.sLocalPlayerID
 end
 
 function sf.sampSetPlayerColor(id, color)
@@ -1515,6 +1511,7 @@ end
 -- Pointers to structures
 
 function sf.sampGetScoreboardInfoPtr()
+	assert(sf.isSampLoaded(), 'SA-MP is not loaded.')
 	return memory.getint32( sf.sampGetBase() + SAMP_SCOREBOARD_INFO )
 end
 
@@ -1524,7 +1521,7 @@ function sf.sampAddChatMessageEx(_type, text, prefix, textColor, prefixColor)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local char = cast('PCSTR', tostring(text))
 	local charPrefix = prefix and cast('PCSTR', tostring(prefix))
-	sampFunctions.addMessage(st_chat, _type, char, charPrefix, textColor, prefixColor)
+	sampFunctions.addMessage(samp_infos.chat, _type, char, charPrefix, textColor, prefixColor)
 end
 
 -- stPickupPool
@@ -1532,7 +1529,7 @@ end
 function sf.sampGetPickupModelTypeBySampId(id)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	id = tonumber(id) or 0
-	if st_pickup.pickup[id] then return st_pickup.pickup[id].iModelID, st_pickup.pickup[id].iType end
+	if samp_infos.pickup.pickup[id] then return samp_infos.pickup.pickup[id].iModelID, samp_infos.pickup.pickup[id].iType end
 	return -1, -1
 end
 
@@ -1542,53 +1539,17 @@ function sf.sampAddDeathMessage(killer, killed, clkiller, clkilled, reason)
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
 	local killer = cast('PCHAR', killer)
 	local killed = cast('PCHAR', killed)
-	sampFunctions.sendDeathMessage(st_killinfo, killer, killed, 0xFFFFFF000000 + clkiller, 0xFFFFFF000000 + clkilled, reason)
+	sampFunctions.sendDeathMessage(samp_infos.killinfo, killer, killed, clkiller, clkilled, reason)
 end
 
 -- stDialogInfo
 
 function sf.sampGetDialogButtons()
 	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local dialog = st_dialog.pDialog
+	local dialog = samp_infos.dialog.pDialog
 	local b1p = sampFunctions.getElementSturct(dialog, 20, 0) + 0x4D
 	local b2p = sampFunctions.getElementSturct(dialog, 21, 0) + 0x4D
 	return str(b1p), str(b2p)
 end
 
--- Hooks
-if sf.isSampLoaded() then
-	lua_thread.create(function()
-		while not sf.isSampAvailable() do wait(0) end
-		if #hooks.onSendRpc == 1 then
-			local callback = cast('RPC_CALL', hooks.onSendRpc[1])
-			local detour_addr = kernel.getAddressByCData(callback)
-			local raknet = kernel.getAddressByCData(st_samp.pRakClientInterface)
-			local hook_addr = memory.getuint32(raknet) + 0x64
-			local inf_addr = memory.getuint32(hook_addr, true)
-			originals.onSendRpc = cast('RPC_CALL', inf_addr)
-			hooks.onSendRpc[2] = inf_addr
-			hooks.onSendRpc[3] = hook_addr
-			memory.setuint32(hook_addr, detour_addr, true)
-		end
-	end)
-end
-
-function onScriptTerminate(scr)
-	if scr == script.this then
-		memory.setuint32(hooks.onSendRpc[3], hooks.onSendRpc[2], true)
-	end
-end
-
 return sf
-
---[[
-Unfinished functions
-
-function sf.raknetSendRpc(rpc, bs)
-	assert(sf.isSampAvailable(), 'SA-MP is not available.')
-	local rpc = ffi.new('DWORD[1]', rpc)
-	local bs = ffi.new('DWORD[1]', bs)
-	ffi.cast('void (__stdcall*)(void*, void*, signed int, signed int, DWORD, DWORD)', memory.getuint32(kernel.getAddressByCData(st_samp.pRakClientInterface)) + 0x64)
-		(rpc, bs, 1, 9, 0, 0)
-end
-]]
