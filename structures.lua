@@ -1,7 +1,11 @@
 --[[
-	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for the source code of s0beit provided.
-	fishlake-scripts.ru & blast.hk (c) 2018-2019.
+    Project: SAMPFUNCSLUA
+    URL: https://github.com/imring/SAMPFUNCSLUA
+
+    File: structures.lua
+    License: MIT License
+
+	Authors: FishLake Scripts <fishlake-scripts.ru> and BH Team <blast.hk>.
 ]]
 local ffi = require 'ffi'
 
@@ -58,6 +62,7 @@ typedef struct SFL_ActorPool SFL_ActorPool;
 typedef struct SFL_ChatBubbleInfo SFL_ChatBubbleInfo;
 typedef struct SFL_StreamedOutPlayerInfo SFL_StreamedOutPlayerInfo;*/
 typedef struct SFL_Camera SFL_Camera;
+typedef struct SFL_RakClient_VTBL SFL_RakClient_VTBL;
 
 enum Limits
 {
@@ -80,15 +85,15 @@ enum Limits
 
 struct SFL_SAMPPools
 {
-	struct stActorPool		*pActor;
-	struct stObjectPool		*pObject;
-	struct stGangzonePool	*pGangzone;
-	struct stTextLabelPool	*pText3D;
-	struct stTextdrawPool	*pTextdraw;
+	struct SFL_ActorPool		*pActor;
+	struct SFL_ObjectPool		*pObject;
+	struct SFL_GangzonePool	*pGangzone;
+	struct SFL_TextLabelPool	*pText3D;
+	struct SFL_TextdrawPool	*pTextdraw;
 	void					*pPlayerLabels;
-	struct stPlayerPool		*pPlayer;
-	struct stVehiclePool	*pVehicle;
-	struct stPickupPool		*pPickup;
+	struct SFL_PlayerPool		*pPlayer;
+	struct SFL_VehiclePool	*pVehicle;
+	struct SFL_PickupPool		*pPickup;
 };
 
 struct SFL_SAMP
@@ -105,7 +110,7 @@ struct SFL_SAMP
 	int						iGameState;
 	DWORD					ulConnectTick;
 	struct SFL_ServerPresets	*pSettings;
-	void					*pRakClientInterface;
+	struct SFL_RakClient	*pRakClientInterface;
 	struct SFL_SAMPPools		*pPools;
 };
 
@@ -880,8 +885,72 @@ struct SFL_ChatBubbleInfo
 
 struct SFL_StreamedOutPlayerInfo
 {
-	int						iPlayerID[SAMP_MAX_PLAYERS];
+	bool					iIsListed[SAMP_MAX_PLAYERS];
 	float					fPlayerPos[SAMP_MAX_PLAYERS][3];
+};
+
+struct SFL_RakClient_VTBL
+{
+	void* dtor;
+	void* Connect;
+	void* Disconnect;
+	void* InitializeSecurity;
+	void* SetPassword;
+	void* HasPassword;
+	void* Send1;
+	void* Send2;
+	void* Receive;
+	void* DeallocatePacket;
+	void* PingServer;
+	void* PingServer2;
+	void* GetAveragePing;
+	void* GetLastPing;
+	void* GetLowestPing;
+	void* GetPlayerPing;
+	void* StartOccasionalPing;
+	void* StopOccasionalPing;
+	void* IsConnected;
+	void* GetSynchronizedRandomInteger;
+	void* GenerateCompressionLayer;
+	void* DeleteCompressionLayer;
+	void* RegisterAsRemoteProcedureCall;
+	void* RegisterClassMemberRPC;
+	void* UnregisterAsRemoteProcedureCall;
+	void* RPC1;
+	void* RPC2;
+	void* RPC3;
+	void* SetTrackFrequencyTable;
+	void* GetSendFrequencyTable;
+	void* GetCompressionRatio;
+	void* GetDecompressionRatio;
+	void* AttachPlugin;
+	void* DetachPlugin;
+	void* GetStaticServerData;
+	void* SetStaticServerData;
+	void* GetStaticClientData;
+	void* SetStaticClientData;
+	void* SendStaticClientDataToServer;
+	void* GetServerID;
+	void* GetPlayerID;
+	void* GetInternalID;
+	void* PlayerIDToDottedIP;
+	void* PushBackPacket;
+	void* SetRouterInterface;
+	void* RemoveRouterInterface;
+	void* SetTimeoutTime;
+	void* SetMTUSize;
+	void* GetMTUSize;
+	void* AllowConnectionResponseIPMigration;
+	void* AdvertiseSystem;
+	void* GetStatistics;
+	void* ApplyNetworkSimulator;
+	void* IsNetworkSimulatorActive;
+	void* GetPlayerIndex;
+};
+
+struct SFL_RakClient
+{
+	SFL_RakClient_VTBL *vtbl;
 };
 
 #pragma pack(pop)

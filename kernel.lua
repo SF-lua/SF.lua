@@ -1,7 +1,11 @@
 --[[
-	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for the source code of s0beit provided.
-	fishlake-scripts.ru & blast.hk (c) 2018-2019.
+    Project: SAMPFUNCSLUA
+    URL: https://github.com/imring/SAMPFUNCSLUA
+
+    File: kernel.lua
+    License: MIT License
+
+	Authors: FishLake Scripts <fishlake-scripts.ru> and BH Team <blast.hk>.
 ]]
 local ffi = require 'ffi'
 local memory = require 'memory'
@@ -17,6 +21,7 @@ typedef long HRESULT;
 typedef int INT;
 typedef int HWND;
 typedef bool BOOL;
+typedef unsigned short PlayerIndex;
 
 typedef struct _stdvector
 {
@@ -79,8 +84,6 @@ void *malloc(size_t size);
 void free( void * ptrmem );
 void * memset( void * memptr, int val, size_t num );
 void *realloc(void *ptr, size_t newsize);
-
-typedef void(__stdcall *RPC_CALL)(BYTE*id, char* bitStream, int priority, int reliability, int orderingChannel, bool shiftTs);
 ]]
 
 local k = {}

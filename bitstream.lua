@@ -1,7 +1,11 @@
 --[[
-	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for the source code of s0beit provided.
-	fishlake-scripts.ru & blast.hk (c) 2018-2019.
+    Project: SAMPFUNCSLUA
+    URL: https://github.com/imring/SAMPFUNCSLUA
+
+    File: bitstream.lua
+    License: MIT License
+
+	Authors: FishLake Scripts <fishlake-scripts.ru> and BH Team <blast.hk>.
 
 	lite version of RakNet BitStream Copyright 2003 Kevin Jenkins.
 ]]
@@ -13,6 +17,7 @@ ffi.cdef[[
 void *malloc(size_t size);
 void free(void * ptrmem);
 void *realloc(void *ptr, size_t newsize);
+void *memset(void *memptr, int val, size_t num);
 
 typedef unsigned char BYTE;
 
@@ -32,13 +37,13 @@ typedef struct
 ]]
 
 local lshift, band, rshift, bor = bit.lshift, bit.band, bit.rshift, bit.bor
-local cast, sizeof, gc, typeof, istype, new, NULL = ffi.cast, ffi.sizeof, ffi.gc, ffi.typeof, ffi.istype, ffi.new, ffi.NULL
-local malloc, free, memcpy, memset, realloc = ffi.C.malloc, ffi.C.free, ffi.copy, ffi.fill, ffi.C.realloc
+local cast, sizeof, gc, typeof, istype, new = ffi.cast, ffi.sizeof, ffi.gc, ffi.typeof, ffi.istype, ffi.new
+local malloc, free, memcpy, memset, realloc = ffi.C.malloc, ffi.C.free, ffi.copy, ffi.C.memset, ffi.C.realloc
 
 local BITSTREAM_STACK_ALLOCATION_SIZE = 256
 
 local function BYTES_TO_BITS(x) return lshift(x, 3) end
-local function BITS_TO_BYTES(x) return lshift(x + 7, 3) end
+local function BITS_TO_BYTES(x) return rshift(x + 7, 3) end
 
 local BitStream = {}
 BitStream.__index = BitStream
@@ -82,7 +87,7 @@ local bs_initialize = {
 					self.numberOfBitsAllocated = BYTES_TO_BITS(BITSTREAM_STACK_ALLOCATION_SIZE)
 				else self.data = cast('BYTE*', malloc(lengthInBytes)) end
 				memcpy(self.data, _data, lengthInBytes)
-			else self.data = NULL end
+			else self.data = nil end
 		else self.data = _data end
 	end
 }
@@ -129,6 +134,24 @@ local bs_write = {
 	end
 }
 
+local bs_read = {
+	function(self, cdata)
+		return self:ReadBits(cdata, ffi.sizeof(cdata) * 8, true)
+	end,
+
+	function(self, output, numberOfBytes)
+		output = cast('char*', output)
+		if band(self.readOffset, 7) == 0 then
+			if self.readOffset + BYTES_TO_BITS(numberOfBytes) > self.numberOfBitsUsed then return false end
+			memcpy(output, self.data + rshift(self.readOffset, 3), numberOfBytes)
+			self.readOffset = self.readOffset + BYTES_TO_BITS(numberOfBytes)
+			return true
+		else
+			return self:ReadBits(output, numberOfBytes * 8)
+		end
+	end
+}
+
 function BitStream.__new(ctype, ...)
 	local v, func = select('#', ...)
 	if v == 0 then func = bs_initialize[1]
@@ -166,16 +189,11 @@ function BitStream:Write(...)
 	func(self, ...)
 end
 
-function BitStream:Read(output, numberOfBytes)
-	output = cast('char*', output)
-	if band(self.readOffset, 7) == 0 then
-		if self.readOffset + BYTES_TO_BITS(numberOfBytes) > self.numberOfBitsUsed then return false end
-		memcpy(output, self.data + rshift(self.readOffset, 3), numberOfBytes)
-		self.readOffset = self.readOffset + BYTES_TO_BITS(numberOfBytes)
-		return true
-	else
-		return self:ReadBits(output, numberOfBytes * 8)
-	end
+function BitStream:Read(...)
+	local v, func = select('#', ...)
+	if v >= 2 then func = bs_read[2]
+	else func = bs_read[1] end
+	func(self, ...)
 end
 
 function BitStream:ResetReadPointer()
@@ -312,18 +330,18 @@ function BitStream:ReadBits(output, numberOfBitsToRead, alignBitsToRight)
 	if self.readOffset + numberOfBitsToRead > self.numberOfBitsUsed then return false end
 
 	local readOffsetMod8, offset = 0, 0
-	memset(output, BITS_TO_BYTES(numberOfBitsToRead), 0)
+	memset(output, 0, BITS_TO_BYTES(numberOfBitsToRead))
 
 	readOffsetMod8 = band(self.readOffset, 7)
 	while numberOfBitsToRead > 0 do
 		local this = output + offset
 		this[0] = bor(this[0], lshift((self.data + rshift(self.readOffset, 3))[0], readOffsetMod8))
 		if readOffsetMod8 > 0 and numberOfBitsToRead > 8 - readOffsetMod8 then
-			this[0] = bor(this[0], lshift((self.data + rshift(self.readOffset, 3) + 1)[0], 8 - readOffsetMod8))
+			this[0] = bor(this[0], rshift((self.data + rshift(self.readOffset, 3) + 1)[0], 8 - readOffsetMod8))
 		end
 		numberOfBitsToRead = numberOfBitsToRead - 8
 		if numberOfBitsToRead < 0 then
-			if alignBitsToRight then this[0] = bit.rshift(this[0], -numberOfBitsToRead) end
+			if alignBitsToRight then this[0] = rshift(this[0], -numberOfBitsToRead) end
 			self.readOffset = self.readOffset + 8 + numberOfBitsToRead
 		else self.readOffset = self.readOffset + 8 end
 		offset = offset + 1
@@ -424,7 +442,7 @@ function BitStream:AssertCopyData()
 
 			memcpy(newdata, data, BITS_TO_BYTES( self.numberOfBitsAllocated ))
 			self.data = newdata
-		else self.data = NULL end
+		else self.data = nil end
 	end
 end
 

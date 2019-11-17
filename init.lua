@@ -1,7 +1,11 @@
 --[[
-	Authors: FYP, imring, DonHomka.
-	Thanks BH Team for the source code of s0beit provided.
-	fishlake-scripts.ru & blast.hk (c) 2018-2019.
+    Project: SAMPFUNCSLUA
+    URL: https://github.com/imring/SAMPFUNCSLUA
+
+    File: init.lua
+    License: MIT License
+
+	Authors: FishLake Scripts <fishlake-scripts.ru> and BH Team <blast.hk>.
 ]]
 local sf = require 'SAMPFUNCSLUA.functions'
 
