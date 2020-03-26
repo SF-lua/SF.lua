@@ -1,12 +1,8 @@
 --[[
-    Project: SAMPFUNCSLUA
-    URL: https://github.com/imring/SAMPFUNCSLUA
-
-    File: bitstream.lua
+    Project: SF.lua <https://github.com/imring/SF.lua>
     License: MIT License
-
-	Authors: FishLake Scripts <fishlake-scripts.ru> and BH Team <blast.hk>.
-
+	Authors: look in file <AUTHORS>.
+	
 	lite version of RakNet BitStream Copyright 2003 Kevin Jenkins.
 ]]
 
