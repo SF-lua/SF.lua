@@ -726,7 +726,7 @@ end
 
 function sampAddChatMessage(text, color)
     assert(isSampAvailable(), 'SA-MP is not available.')
-    sampAddChatMessageEx(CHAT_TYPE_DEBUG, text, '', color, -1)
+    sampAddChatMessageEx(CHAT_TYPE_DEBUG, text, '', color or -1, -1)
 end
 
 function sampGetChatDisplayMode()
