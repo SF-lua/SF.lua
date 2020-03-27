@@ -4,38 +4,42 @@
     Authors: look in file <AUTHORS>.
 ]]
 
-local memory = require("memory");
+local ffi = require("ffi")
+local memory = require("memory")
+
+require("SFlua.cdef")
 
 local versions = {
-    ["0.3.7-R1"] = { "SFlua.037-r1", 0xD8 }
-};
+    [0x31DF13] = { '0.3.7-R1', 'SFlua.037-r1' }
+}
 
-local currentVersion, sampModule = nil, getModuleHandle("samp.dll");
+local currentVersion, sampModule = nil, getModuleHandle("samp.dll")
 
 function isSampLoaded()
-    if(not currentVersion) then
-        -- Getting version taken from SAMP-UDF (https://github.com/SAMP-UDF/SAMP-UDF-for-AutoHotKey/blob/b6707af19c7e02a021f432fedad0b6c30a6b8f9f/SAMP.ahk#L3557)
-        local versionByte = memory.getuint8(sampModule + 0x1036);
-        for i, k in pairs(versions) do
-            if(versionByte == k[2]) then
-                require(k[1]);
-                currentVersion = i;
-                break;
-            end
+    if not currentVersion then
+        -- Getting version taken from SAMP-API (thx fyp)
+        local ntheader = sampModule + memory.getint32(sampModule + 0x3C)
+        local ep = memory.getuint32(ntheader + 0x28)
+        currentVersion = versions[ep]
+        if not currentVersion then
+            error(string.format("Unknown version of SA-MP (Entry point: 0x%08x)", ep))
         end
-        if(not currentVersion) then
-            error(string.format("Unknown version of SA-MP (samp.dll + 0x1036 = 0x%02X)", versionByte));
-        end
+        require(currentVersion[2])
     end
-    return sampModule > 0;
+    return sampModule > 0
 end
 
 function isSampfuncsLoaded()
-    return true;
+    return true
 end
 
 function sampGetBase()
-    return sampModule;
+    return sampModule
 end
 
-isSampLoaded();
+function sampGetVersion()
+    assert(isSampLoaded(), 'SA-MP is not loaded.')
+    return currentVersion[1]
+end
+
+isSampLoaded()

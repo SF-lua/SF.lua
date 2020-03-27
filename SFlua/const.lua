@@ -303,7 +303,13 @@ D3DPT_LINELIST                                 = 2,
 D3DPT_LINESTRIP                                = 3,
 D3DPT_TRIANGLELIST                             = 4,
 D3DPT_TRIANGLESTRIP                            = 5,
-D3DPT_TRIANGLEFAN                              = 6
+D3DPT_TRIANGLEFAN                              = 6,
+
+-- Chat types
+CHAT_TYPE_NONE                                 = 0,
+CHAT_TYPE_CHAT                                 = 2,
+CHAT_TYPE_INFO                                 = 4,
+CHAT_TYPE_DEBUG                                = 8,
 }
 
 -- Copy table 'sampfuncs' to a global scope

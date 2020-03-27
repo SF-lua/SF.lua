@@ -4,8 +4,7 @@
     Authors: look in file <AUTHORS>.
 ]]
 
-local ffi = require("ffi");
-require("SFlua.cdef");
+local ffi = require("ffi")
 
 ffi.cdef[[
     /*typedef struct SFL_SAMPPools SFL_SAMPPools;
@@ -885,4 +884,4 @@ ffi.cdef[[
         bool					iIsListed[SAMP_MAX_PLAYERS];
         float					fPlayerPos[SAMP_MAX_PLAYERS][3];
     };
-]];
+]]

@@ -4,8 +4,8 @@
     Authors: look in file <AUTHORS>.
 ]]
 
-local ffi = require("ffi");
-local memory = require("memory");
+local ffi = require("ffi")
+local memory = require("memory")
 
 ffi.cdef[[
     typedef unsigned int UINT;
@@ -74,5 +74,4 @@ ffi.cdef[[
         void (__stdcall * OnLostDevice)(ID3DXFont* font); // STDMETHOD(OnLostDevice)(THIS) PURE;
         void (__stdcall * OnResetDevice)(ID3DXFont* font); // STDMETHOD(OnResetDevice)(THIS) PURE;
     };
-]];
-
+]]

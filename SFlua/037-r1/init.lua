@@ -4,13 +4,13 @@
     Authors: look in file <AUTHORS>.
 ]]
 
-local memory = require("memory");
-local ffi = require("ffi");
+local memory = require("memory")
+local ffi = require("ffi")
 
-require("SFlua.037-r1.cdef");
-require("SFlua.const");
-local add = require("SFlua.addition");
-local bs = require("SFlua.bitstream");
+require("SFlua.037-r1.cdef")
+require("SFlua.const")
+local add = require("SFlua.addition")
+local bs = require("SFlua.bitstream")
 
 local SAMP_INFO								= 0x21A0F8
 local SAMP_DIALOG_INFO						= 0x21A0B8
@@ -138,11 +138,6 @@ end
 function sampGetGangzonePoolPtr()
     assert(isSampAvailable(), 'SA-MP is not available.')
     return add.GET_POINTER(samp_C.gangzone)
-end
-
-function sampGetTextlabelPoolPtr()
-    assert(isSampAvailable(), 'SA-MP is not available.')
-    return add.GET_POINTER(samp_C.text3d)
 end
 
 function sampGetTextlabelPoolPtr()
@@ -366,6 +361,11 @@ function sampSetDialogClientside(client)
     samp_C.dialog.bServerside = client and 0 or 1
 end
 
+function sampGetListboxItemsCount()
+    assert(isSampAvailable(), 'SA-MP is not available.')
+    return memory.getint32(add.GET_POINTER(samp_C.dialog.pList) + 0x150, true)
+end
+
 -- stGameInfo
 
 function sampToggleCursor(showed)
@@ -405,7 +405,7 @@ function sampGetPlayerNickname(id)
     local point
     if sampGetLocalPlayerId() == id then point = samp_C.player.strLocalPlayerName
     elseif sampIsPlayerConnected(id) then point = samp_C.player.pRemotePlayer[id].strPlayerName end
-    return point and ffi.string(point.pstr) or ''
+    return point and ffi.string(point.str) or ''
 end
 
 function sampSpawnPlayer()
@@ -801,7 +801,7 @@ end
 
 function sampTextdrawGetLetterSizeAndColor(id)
     if sampTextdrawIsExists(id) then
-        return samp_C.textdraw.textdraw[id].fLetterWidth, samp_C.textdraw.textdraw[id].fLetterHeight, kernel.convcolor(samp_C.textdraw.textdraw[id].dwLetterColor)
+        return samp_C.textdraw.textdraw[id].fLetterWidth, samp_C.textdraw.textdraw[id].fLetterHeight, add.convertABGRtoARGB(samp_C.textdraw.textdraw[id].dwLetterColor)
     end
 end
 
@@ -1008,7 +1008,7 @@ end
 function sampGetCarHandleBySampVehicleId(id)
     assert(isSampAvailable(), 'SA-MP is not available.')
     id = tonumber(id) or 0
-    if sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(kernel.getAddressByCData(samp_C.car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
+    if sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(add.GET_POINTER(samp_C.car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
     return false, -1
 end
 
@@ -1018,6 +1018,16 @@ function sampGetVehicleIdByCarHandle(car)
     for i = 0, MAX_VEHICLES - 1 do
         local res, ccar = sampGetCarHandleBySampVehicleId(i)
         if res and ccar == car then return true, i end
+    end
+end
+
+-- stObjectPool
+
+function sampGetObjectHandleBySampId(id)
+    assert(isSampAvailable(), 'SA-MP is not available.')
+    id = tonumber(id) or 0
+    if samp_C.iIsListed[id] == 1 then
+        return getObjectPointerHandle(add.GET_POINTER(samp_C.object[id].object_info))
     end
 end
 
@@ -1120,12 +1130,12 @@ end
 
 function raknetBitStreamGetDataPtr(bitstream)
     bitstream = ffi.cast('struct SFL_BitStream*', bitstream)
-    return kernel.getAddressByCData(bitstream.data)
+    return add.GET_POINTER(bitstream.data)
 end
 
 function raknetNewBitStream()
     local bitstream = bs()
-    return kernel.getAddressByCData(bitstream)
+    return add.GET_POINTER(bitstream)
 end
 
 function raknetDeleteBitStream(bitstream)
@@ -1194,6 +1204,11 @@ function raknetBitStreamEncodeString(bitstream, str)
     local buf = ffi.new('char[?]', #str + 1, str)
     local this = ffi.cast('void**', sampGetBase() + 0x10D894)
     samp_C.writeEncodeString(this[0], buf, #str, bitstream, 0)
+end
+
+function raknetBitStreamWriteBitStream(bitstream, bitStream)
+    bitstream = ffi.cast('struct SFL_BitStream*', bitstream)
+    bitstream:Write(bitStream)
 end
 
 -- RakClient
@@ -1417,7 +1432,7 @@ function raknetGetPacketName(id)
     return tab[id]
 end
 
-function sampGetStreamedOutPlayerPos(id)
+--[[function sampGetStreamedOutPlayerPOs(id)
     assert(isSampAvailable(), 'SA-MP is not available.')
     id = tonumber(id) or 0
     local res, handle = sampGetCharHandleBySampPlayerId(id)
@@ -1426,7 +1441,7 @@ function sampGetStreamedOutPlayerPos(id)
     else
         return hook.StreamedOutInfo(id)
     end
-end
+end]]
 
 --- New functions
 
@@ -1467,7 +1482,7 @@ function sampSetPlayerColor(id, color)
     assert(isSampAvailable(), 'SA-MP is not available.')
     id = tonumber(id)
     if sampIsPlayerConnected(id) or sampGetLocalPlayerId() == id then
-        color_table[id] = kernel.convertARGBToRGBA(color)
+        color_table[id] = add.convertARGBToRGBA(color)
     end
 end
 
