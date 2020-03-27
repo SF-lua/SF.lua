@@ -245,6 +245,12 @@ MAX_TEXTDRAWS                                  = 2048,
 MAX_CLIENTCMDS                                 = 144,
 MAX_MENUS                                      = 128,
 
+-- Chat messages types
+CHAT_TYPE_NONE                                 = 0,
+CHAT_TYPE_CHAT                                 = 2,
+CHAT_TYPE_INFO                                 = 4,
+CHAT_TYPE_DEBUG                                = 8,
+
 -- Text Styles
 FCR_NONE                                       = 0x0,
 FCR_BOLD                                       = 0x1,
