@@ -726,7 +726,7 @@ end
 
 function sampAddChatMessage(text, color)
     assert(isSampAvailable(), 'SA-MP is not available.')
-    sampAddChatMessageEx(CHAT_TYPE_DEBUG, text, '', color or -1, -1)
+    sampAddChatMessageEx(CHAT_TYPE_DEBUG, text, '', color, -1)
 end
 
 function sampGetChatDisplayMode()
@@ -1484,7 +1484,7 @@ function sampAddChatMessageEx(_type, text, prefix, textColor, prefixColor)
     assert(isSampAvailable(), 'SA-MP is not available.')
     local char = ffi.cast('PCSTR', tostring(text))
     local charPrefix = prefix and ffi.cast('PCSTR', tostring(prefix))
-    samp_C.addMessage(samp_C.chat, _type, char, charPrefix, textColor, prefixColor)
+    samp_C.addMessage(samp_C.chat, _type, char, charPrefix, textColor or -1, prefixColor)
 end
 
 -- stPickupPool
