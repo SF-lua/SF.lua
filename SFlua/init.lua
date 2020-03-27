@@ -1,7 +1,8 @@
 --[[
-    Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
-    Authors: look in file <AUTHORS>.
+	Project: SF.lua <https://github.com/imring/SF.lua>
+	License: MIT License
+
+	Authors: look in file <AUTHORS>.
 ]]
 
 local memory = require("memory");

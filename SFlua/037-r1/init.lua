@@ -1,7 +1,7 @@
 --[[
-    Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
-    Authors: look in file <AUTHORS>.
+        Project: SF.lua <https://github.com/imring/SF.lua>
+        License: MIT License
+        Authors: look in file <AUTHORS>.
 ]]
 
 local memory = require("memory");
@@ -12,15 +12,15 @@ require("SFlua.const");
 local add = require("SFlua.addition");
 local bs = require("SFlua.bitstream");
 
-local SAMP_INFO								= 0x21A0F8
+local SAMP_INFO							= 0x21A0F8
 local SAMP_DIALOG_INFO						= 0x21A0B8
 local SAMP_MISC_INFO						= 0x21A10C
 local SAMP_INPUIT_INFO						= 0x21A0E8
 local SAMP_CHAT_INFO						= 0x21A0E4
-local SAMP_COLOR							= 0x216378
+local SAMP_COLOR						= 0x216378
 local SAMP_KILL_INFO						= 0x21A0EC
 local SAMP_SCOREBOARD_INFO					= 0x21A0B4
-local SAMP_ANIM								= 0xF15B0
+local SAMP_ANIM							= 0xF15B0
 
 local samp_C = {
     -- stSAMP

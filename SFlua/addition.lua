@@ -1,7 +1,7 @@
 --[[
-    Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
-    Authors: look in file <AUTHORS>.
+	Project: SF.lua <https://github.com/imring/SF.lua>
+	License: MIT License
+	Authors: look in file <AUTHORS>.
 ]]
 
 local ffi = require("ffi");
@@ -10,7 +10,7 @@ local bit = require("bit");
 local add = {};
 
 function add.GET_POINTER(cdata)
-    return tonumber(ffi.cast("uintptr_t", ffi.cast("void *", cdata)));
+	return tonumber(ffi.cast("uintptr_t", ffi.cast("void *", cdata)));
 end
 
 function add.explode_color(color)
