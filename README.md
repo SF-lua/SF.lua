@@ -1,25 +1,26 @@
 # SF.lua
-SF.lua (o.n. SAMPFUNCSLUA) - is library that allows you to interact with SA-MP. Is a translation of [SAMPFUNCS](https://www.blast.hk/threads/17/) in Lua.  
-Version: 0.78-alpha.
+<p align="center"><img src="/logo.png" height="250px" /></p>
 
-## Authors
-Look in file [AUTHORS](https://github.com/imring/SF.lua/blob/master/AUTHORS).  
-Also thanks to BlastHack Team for help in developing.
+SF.lua is library for [MoonLoader](https://www.blast.hk/moonloader), which provides an opportunity to interact with SA-MP. This library doesn't replace all [SAMPFUNCS](https://www.blast.hk/sampfuncs), it just adds new functions for Lua script.
 
 ## Progress
-SF.lua is currently 78% developed.
+At the moment, SF.lua is done at 78%, of this left:
+* Events onSendRpc/onSendPacket/etc;
+* Functions with sending RPC/Packet;
+* Custom handler of commands.
 
-## New functions
-```lua
-bool result = sampIsPlayerDefined(int id)
-uint scorePtr = sampGetScoreboardInfoPtr()
-zstring nick = sampGetLocalPlayerNickname()
-int id = sampGetLocalPlayerId()
-uint color = sampGetLocalPlayerColor()
-sampAddChatMessageEx(int type, zstring text, zstring prefix, uint color, uint pcolor)
-sampSetPlayerColor(int id, uint color)
-bool result = sampIsVehicleDefined(int id)
-int model, int type = sampGetPickupModelTypeBySampId(int id)
-sampAddDeathMessage(zstring killer, zstring killed, uint clKiller, uint clKilled, int reason)
-zstring button1, zstring button2 = sampGetDialogButtons()
-```
+## Functional
+There will be no functions in SF.lua:
+* Associated with the creation/editing of custom windows DXUT;
+* Interaction with SAMPFUNCS/CLEO.
+
+There are also new features for easy interaction.
+
+## Members
+Main developers: [imring](https://github.com/imring), [DonHomka](https://github.com/DonHomka), [THE-FYP](https://github.com/THE-FYP), [4el0ve4ik](https://github.com/4el0ve4ik)  
+Also thanks:
+* [Akionka](https://github.com/Akionka) - development and testing assistance;
+* [crybaby](https://www.behance.net/schweitzerr) - created a logo for this project.
+
+## Installation
+Directory **SFlua** copy to path **moonloader/lib**.
