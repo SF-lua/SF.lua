@@ -11,7 +11,7 @@ require 'SFlua.037-r1.cdef'
 local add = require 'SFlua.addition'
 local bs = require 'SFlua.bitstream'
 
-local SAMP_INFO							`	= 0x21A0F8
+local SAMP_INFO								= 0x21A0F8
 local SAMP_DIALOG_INFO						= 0x21A0B8
 local SAMP_MISC_INFO						= 0x21A10C
 local SAMP_INPUIT_INFO						= 0x21A0E8
