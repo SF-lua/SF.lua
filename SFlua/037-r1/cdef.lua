@@ -1,7 +1,9 @@
 --[[
     Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
+    License: GNU General Public License v3.0
     Authors: look in file <AUTHORS>.
+
+    mod_sa is available from https://github.com/BlastHackNet/mod_s0beit_sa/
 ]]
 
 local ffi = require("ffi")

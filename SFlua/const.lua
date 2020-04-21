@@ -310,6 +310,10 @@ CHAT_TYPE_NONE                                 = 0,
 CHAT_TYPE_CHAT                                 = 2,
 CHAT_TYPE_INFO                                 = 4,
 CHAT_TYPE_DEBUG                                = 8,
+
+-- SA-MP versions
+VERSION_UNKNOWN                                = -1,
+VERSION_0_3_7_R1                               = 0,
 }
 
 -- Copy table 'sampfuncs' to a global scope

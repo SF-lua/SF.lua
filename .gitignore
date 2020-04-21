@@ -40,5 +40,4 @@ luac.out
 *.hex
 
 # Custom
-raknet/Release
-*.vcxproj*
+counter/

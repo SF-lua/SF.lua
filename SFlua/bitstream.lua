@@ -1,6 +1,6 @@
 --[[
     Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
+    License: GNU General Public License v3.0
 	Authors: look in file <AUTHORS>.
 	
 	lite version of RakNet BitStream Copyright 2003 Kevin Jenkins.

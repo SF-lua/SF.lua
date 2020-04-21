@@ -1,18 +1,17 @@
 --[[
     Project: SF.lua <https://github.com/imring/SF.lua>
-    License: MIT License
+    License: GNU General Public License v3.0
     Authors: look in file <AUTHORS>.
 ]]
 
-local memory = require("memory")
-local ffi = require("ffi")
+local memory = require 'memory'
+local ffi = require 'ffi'
 
-require("SFlua.037-r1.cdef")
-require("SFlua.const")
-local add = require("SFlua.addition")
-local bs = require("SFlua.bitstream")
+require 'SFlua.037-r1.cdef'
+local add = require 'SFlua.addition'
+local bs = require 'SFlua.bitstream'
 
-local SAMP_INFO								= 0x21A0F8
+local SAMP_INFO							`	= 0x21A0F8
 local SAMP_DIALOG_INFO						= 0x21A0B8
 local SAMP_MISC_INFO						= 0x21A10C
 local SAMP_INPUIT_INFO						= 0x21A0E8
@@ -365,6 +364,17 @@ function sampGetListboxItemsCount()
     assert(isSampAvailable(), 'SA-MP is not available.')
     return memory.getint32(add.GET_POINTER(samp_C.dialog.pList) + 0x150, true)
 end
+
+function sampGetListboxItemText(list)
+    assert(isSampAvailable(), 'SA-MP is not available.')
+    list = tonumber(list) or 0
+    if list >= 0 and sampGetListboxItemsCount() - 1 >= list then
+        local data = ffi.cast('struct DXUTComboBoxItem**', memory.getuint32(add.GET_POINTER(samp_C.dialog.pList) + 0x14C))
+        return ffi.string(data[list][0].strText)
+    end
+    return ''
+end
+
 
 -- stGameInfo
 
@@ -1026,9 +1036,26 @@ end
 function sampGetObjectHandleBySampId(id)
     assert(isSampAvailable(), 'SA-MP is not available.')
     id = tonumber(id) or 0
-    if samp_C.iIsListed[id] == 1 then
+    if samp_C.object.iIsListed[id] == 1 then
         return getObjectPointerHandle(add.GET_POINTER(samp_C.object[id].object_info))
     end
+end
+
+-- stPickupPool
+
+function sampGetPickupHandleBySampId(id)
+    assert(isSampAvailable(), 'SA-MP is not available.')
+    id = tonumber(id) or 0
+    return samp_C.pickup.ul_GTA_PickupID[id]
+end
+
+function sampGetPickupSampIdByHandle(handle)
+    assert(isSampAvailable(), 'SA-MP is not available.')
+    handle = tonumber(handle) or 0
+    for i = 0, MAX_PICKUPS - 1 do
+        if sampGetPickupHandleBySampId(i) == handle then return i end
+    end
+    return -1
 end
 
 -- BitStream
@@ -1212,20 +1239,6 @@ function raknetBitStreamWriteBitStream(bitstream, bitStream)
 end
 
 -- RakClient
-
---[[function sampSendDeathBYPlayer(id, reason)
-    assert(isSampAvailable(), 'SA-MP is not available.')
-    local bitstream = bs()
-    bitstream:WriteBits(ffi.new('char[?]', 1, reason), 8, true)
-    bitstream:WriteBits(ffi.new('WORD[1]', (id), 16, true)
-    raknetSendRpcEx(53, kernel.getAddressByCData(bitstream), 1, 8, 0, false)
-    bitstream:__gc()
-end
-function raknetSendRpcEX(rpc, bitstream, priority, reliability, channel, timestamp)
-    assert(isSampAvailable(), 'SA-MP is not available.')
-    rpc = ffi.new('char[1]', rpc)
-    originals.onSendRpc(rpc, ffi.cast('PCHAR', bitstream), priority, reliability, channel, timestamp)
-end]]
 
 function raknetGetRpcName(id)
     local tab = {
@@ -1431,17 +1444,6 @@ function raknetGetPacketName(id)
     }
     return tab[id]
 end
-
---[[function sampGetStreamedOutPlayerPOs(id)
-    assert(isSampAvailable(), 'SA-MP is not available.')
-    id = tonumber(id) or 0
-    local res, handle = sampGetCharHandleBySampPlayerId(id)
-    if res == true and doesCharExist(handle) then
-        return false, getCharCoordinates(handle)
-    else
-        return hook.StreamedOutInfo(id)
-    end
-end]]
 
 --- New functions
 
