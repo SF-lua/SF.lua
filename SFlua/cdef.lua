@@ -74,4 +74,13 @@ ffi.cdef[[
         void (__stdcall * OnLostDevice)(ID3DXFont* font); // STDMETHOD(OnLostDevice)(THIS) PURE;
         void (__stdcall * OnResetDevice)(ID3DXFont* font); // STDMETHOD(OnResetDevice)(THIS) PURE;
     };
+
+    struct DXUTComboBoxItem
+    {
+        char strText[256];
+        void*  pData;
+
+        RECT  rcActive;
+        bool  bVisible;
+    };
 ]]
