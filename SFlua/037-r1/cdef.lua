@@ -3,17 +3,44 @@
     License: GNU General Public License v3.0
     Authors: look in file <AUTHORS>.
 
-    mod_sa is available from https://github.com/BlastHackNet/mod_s0beit_sa/
+    ------------------------------------------------------------------------------
+
+	MIT License
+
+    Copyright (c) 2018 LUCHARE<luchare.dev@gmail.com>
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.
+
+    https://github.com/BlastHackNet/SAMP-API
 ]]
 
-local ffi = require("ffi")
+local ffi = require 'ffi'
+
+require 'SFlua.cdef'
+require 'SFlua.bitstream'
 
 ffi.cdef[[
     /*typedef struct SFL_SAMPPools SFL_SAMPPools;
-    typedef struct SFL_SAMP SFL_SAMP;
+    typedef struct SFL_NetGame SFL_NetGame;
     typedef struct SFL_ServerInfo SFL_ServerInfo;
     typedef struct SFL_ServerPresets SFL_ServerPresets;
-    typedef struct SFL_DialogInfo SFL_DialogInfo;
+    typedef struct SFL_Dialog SFL_Dialog;
     typedef struct SFL_TextDrawTransmit SFL_TextDrawTransmit;
     typedef struct SFL_Textdraw SFL_Textdraw;
     typedef struct SFL_TextdrawPool SFL_TextdrawPool;
@@ -34,10 +61,10 @@ ffi.cdef[[
     typedef struct SFL_StatsData SFL_StatsData;
     typedef struct SFL_HeadSync SFL_HeadSync;
     typedef struct SFL_LocalPlayer SFL_LocalPlayer;*/
-    typedef struct SFL_RemotePlayerData SFL_RemotePlayerData;
-    /*typedef struct SFL_RemotePlayer SFL_RemotePlayer;*/
-    typedef struct SFL_SAMPEntity SFL_SAMPEntity;
-    typedef struct SFL_SAMPPed SFL_SAMPPed;
+    typedef struct SFL_RemotePlayer SFL_RemotePlayer;
+    /*typedef struct SFL_PlayerInfo SFL_PlayerInfo;*/
+    typedef struct SFL_Entity SFL_Entity;
+    typedef struct SFL_Ped SFL_Ped;
     /*typedef struct SFL_VehiclePool SFL_VehiclePool;
     typedef struct SFL_SAMPVehicle SFL_SAMPVehicle;
     typedef struct SFL_Object SFL_Object;
@@ -61,224 +88,246 @@ ffi.cdef[[
     typedef struct SFL_ChatBubbleInfo SFL_ChatBubbleInfo;
     typedef struct SFL_StreamedOutPlayerInfo SFL_StreamedOutPlayerInfo;*/
     typedef struct SFL_Camera SFL_Camera;
+
+    typedef struct SFL_NetGame            SFL_NetGame;
+    typedef struct SFL_Settings           SFL_Settings;
+    typedef struct SFL_Pools              SFL_Pools;
+    typedef struct SFL_Dialog             SFL_Dialog;
+    typedef struct SFL_RakClientInterface SFL_RakClientInterface;
+    typedef struct SFL_TextDraw           SFL_TextDraw;
+    typedef struct SFL_TextDrawPool       SFL_TextDrawPool;
+    typedef struct SFL_TextDrawTransmit   SFL_TextDrawTransmit;
+    typedef struct SFL_Pickup             SFL_Pickup;
+    typedef struct SFL_WeaponPickup       SFL_WeaponPickup;
+    typedef struct SFL_PickupPool         SFL_PickupPool;
+    typedef struct SFL_PlayerPool         SFL_PlayerPool;
+    typedef struct SFL_LocalPlayer        SFL_LocalPlayer;
+    typedef struct SFL_PlayerInfo         SFL_PlayerInfo;
+    typedef struct SFL_Audio              SFL_Audio;
+    typedef struct SFL_Game               SFL_Game;
+    typedef struct SFL_Entity             SFL_Entity;
+    typedef struct SFL_Ped_Accessory      SFL_Ped_Accessory;
+    typedef struct SFL_Ped                SFL_Ped;
+    typedef struct SFL_Animation          SFL_Animation;
     
     enum Limits
     {
-        SAMP_MAX_ACTORS = 1000,
-        SAMP_MAX_PLAYERS = 1004,
-        SAMP_MAX_VEHICLES = 2000,
-        SAMP_MAX_PICKUPS = 4096,
-        SAMP_MAX_OBJECTS = 1000,
-        SAMP_MAX_GANGZONES = 1024,
-        SAMP_MAX_3DTEXTS = 2048,
-        SAMP_MAX_TEXTDRAWS = 2048,
-        SAMP_MAX_PLAYERTEXTDRAWS = 256,
-        SAMP_MAX_CLIENTCMDS = 144,
-        SAMP_MAX_MENUS = 128,
+        SAMP_MAX_ACTORS      = 1000,
+        MAX_PLAYERS          = 1004,
+        SAMP_MAX_VEHICLES    = 2000,
+        MAX_PICKUPS          = 4096,
+        SAMP_MAX_OBJECTS     = 1000,
+        SAMP_MAX_GANGZONES   = 1024,
+        SAMP_MAX_3DTEXTS     = 2048,
+        MAX_TEXTDRAWS        = 2048,
+        MAX_LOCAL_TEXTDRAWS  = 256,
+        SAMP_MAX_CLIENTCMDS  = 144,
+        SAMP_MAX_MENUS       = 128,
         SAMP_MAX_PLAYER_NAME = 24,
-        SAMP_ALLOWED_PLAYER_NAME_LENGTH = 20,
+
+        MAX_ACCESSORIES = 10
     };
     
     #pragma pack(push, 1)
     
-    struct SFL_SAMPPools
+    // CNetGame
+    struct SFL_Pools
     {
-        struct SFL_ActorPool		*pActor;
-        struct SFL_ObjectPool		*pObject;
-        struct SFL_GangzonePool	*pGangzone;
-        struct SFL_TextLabelPool	*pText3D;
-        struct SFL_TextdrawPool	*pTextdraw;
-        void					*pPlayerLabels;
-        struct SFL_PlayerPool		*pPlayer;
-        struct SFL_VehiclePool	*pVehicle;
-        struct SFL_PickupPool		*pPickup;
+        struct SFL_ActorPool     *m_pActor;
+        struct SFL_ObjectPool    *m_pObject;
+        struct SFL_GangzonePool  *m_pGangzone;
+        struct SFL_TextLabelPool *m_pLabel;
+        struct SFL_TextDrawPool  *m_pTextdraw;
+        void                     *m_pMenu;
+        struct SFL_PlayerPool    *m_pPlayer;
+        struct SFL_VehiclePool   *m_pVehicle;
+        struct SFL_PickupPool    *m_pPickup;
+    };
+
+    struct SFL_Settings
+    {
+        bool          m_bUseCJWalk;
+        unsigned int  m_nDeadDropsMoney;
+        float         m_fWorldBoundaries[4];
+        bool          m_bAllowWeapons;
+        float         m_fGravity;
+        bool          m_bEnterExit;
+        BOOL          m_bVehicleFriendlyFire;
+        bool          m_bHoldTime;
+        bool          m_bInstagib;
+        bool          m_bZoneNames;
+        bool          m_bFriendlyFire;
+        BOOL          m_bClassesAvailable;
+        float         m_fNameTagsDrawDist;
+        bool          m_bManualVehicleEngineAndLight;
+        unsigned char m_nWorldTimeHour;
+        unsigned char m_nWorldTimeMinute;
+        unsigned char m_nWeather;
+        bool          m_bNoNametagsBehindWalls;
+        int           m_nPlayerMarkersMode;
+        float         m_fChatRadius;
+        bool          m_bNameTags;
+        bool          m_bLtdChatRadius;
     };
     
-    struct SFL_SAMP
+    struct SFL_NetGame
     {
-        void					*pUnk0;
-        struct SFL_ServerInfo		*pServerInfo;
-        BYTE					byteSpace[24];
-        char					szIP[257];
-        char					szHostname[259];
-        bool					bNametagStatus; // changes by /nametagstatus
-        DWORD					ulPort;
-        DWORD					ulMapIcons[100];
-        int						iLanMode;
-        int						iGameState;
-        DWORD					ulConnectTick;
-        struct SFL_ServerPresets	*pSettings;
-        void	*pRakClientInterface;
-        struct SFL_SAMPPools		*pPools;
+        char                    pad_0[32];
+        char                    m_szHostAddress[257];
+        char                    m_szHostname[257];
+        bool                    m_bDisableCollision;
+        bool                    m_bUpdateCameraTarget;
+        bool                    m_bNametagStatus;
+        int                     m_nPort;
+        BOOL                    m_bLanMode;
+        GTAREF                  m_aMapIcons[100];
+        int                     m_nGameState;
+        TICK                    m_lastConnectAttempt;
+        SFL_Settings           *m_pSettings;
+        SFL_RakClientInterface *m_pRakClient;
+        SFL_Pools              *m_pPools;
     };
     
-    struct SFL_ServerInfo
+    // CDialog
+    struct SFL_Dialog
     {
-        DWORD 					uiIP;
-        WORD 					usPort;
+        struct IDirect3DDevice9 *m_pDevice;
+        unsigned long            m_position[2];
+        unsigned long            m_size[2];
+        unsigned long            m_buttonOffset[2];
+        struct CDXUTDialog      *m_pDialog;
+        struct CDXUTListBox     *m_pListbox;
+        struct CDXUTIMEEditBox  *m_pEditbox;
+        BOOL                     m_bIsActive;
+        int                      m_nType;
+        int                      m_nId;
+        char                    *m_szText;
+        int                      m_textSize[2];
+        char                     m_szCaption[65];
+        BOOL                     m_bServerside;
     };
     
-    struct SFL_ServerPresets
-    {
-        BYTE					byteCJWalk;
-        int						m_iDeathDropMoney;
-        float					fWorldBoundaries[4];
-        bool					m_bAllowWeapons;
-        float					fGravity;
-        BYTE					byteDisableInteriorEnterExits;
-        DWORD					ulVehicleFriendlyFire;
-        bool					m_byteHoldTime;
-        bool					m_bInstagib;
-        bool					m_bZoneNames;
-        bool					m_byteFriendlyFire;
-        int						iClassesAvailable;
-        float					fNameTagsDistance;
-        bool					m_bManualVehicleEngineAndLight;
-        BYTE					byteWorldTime_Hour;
-        BYTE					byteWorldTime_Minute;
-        BYTE					byteWeather;
-        BYTE					byteNoNametagsBehindWalls;
-        int						iPlayerMarkersMode;
-        float					fGlobalChatRadiusLimit;
-        BYTE					byteShowNameTags;
-        bool					m_bLimitGlobalChatRadius;
-    };
-    
-    struct SFL_DialogInfo
-    {
-        void					*m_pD3DDevice;
-        int						iTextPoxX;
-        int						iTextPoxY;
-        DWORD					uiDialogSizeX;
-        DWORD					uiDialogSizeY;
-        int						iBtnOffsetX;
-        int						iBtnOffsetY;
-        void					*pDialog;
-        void					*pList;
-        void					*pEditBox;
-        int						iIsActive;
-        int						iType;
-        DWORD					DialogID;
-        PCHAR					pText;
-        DWORD					uiTextWidth;
-        DWORD					uiTextHeight;
-        char					szCaption[65];
-        int						bServerside;
-    };
-    
+    // CTextDraw
     struct SFL_TextDrawTransmit
     {
         union
         {
-            BYTE byteFlags;
-            struct
-            {
-                BYTE byteBox : 1;
-                BYTE byteLeft : 1;
-                BYTE byteRight : 1;
-                BYTE byteCenter : 1;
-                BYTE byteProportional : 1;
-                BYTE bytePadding : 3;
+            struct {
+                unsigned char m_bBox : 1;
+                unsigned char m_bLeft : 1;
+                unsigned char m_bRight : 1;
+                unsigned char m_bCenter : 1;
+                unsigned char m_bProportional : 1;
             };
+            unsigned char m_nFlags;
         };
-        float					fLetterWidth;
-        float					fLetterHeight;
-        DWORD					dwLetterColor;
-        float					fBoxWidth;
-        float					fBoxHeight;
-        DWORD					dwBoxColor;
-        BYTE					byteShadow;
-        BYTE					byteOutline;
-        DWORD					dwBackgroundColor;
-        BYTE					byteStyle;
-        BYTE					byteUNK;
-        float					fX;
-        float					fY;
-        WORD					sModel;
-        float					fRot[3];
-        float					fZoom;
-        WORD					sColor[2];
+        float          m_fLetterWidth;
+        float          m_fLetterHeight;
+        D3DCOLOR       m_letterColor;
+        float          m_fBoxWidth;
+        float          m_fBoxHeight;
+        D3DCOLOR       m_boxColor;
+        unsigned char  m_nShadow;
+        bool           m_bOutline;
+        D3DCOLOR       m_backgroundColor;
+        unsigned char  m_nStyle;
+        unsigned char  unknown;
+        float          m_fX;
+        float          m_fY;
+        unsigned short m_nModel;
+        CVector        m_rotation;
+        float          m_fZoom;
+        unsigned short m_aColor[2];
     };
     
-    struct SFL_Textdraw
+    struct SFL_TextDraw
     {
-        char					szText[800 + 1];
-        char					szString[1600 + 2];
-        float					fLetterWidth;
-        float					fLetterHeight;
-        DWORD					dwLetterColor;
-        BYTE					byte_unk;	// always = 01 (?)
-        BYTE					byteCenter;
-        BYTE					byteBox;
-        float					fBoxSizeX;
-        float					fBoxSizeY;
-        DWORD					dwBoxColor;
-        BYTE					byteProportional;
-        DWORD					dwShadowColor;
-        BYTE					byteShadowSize;
-        BYTE					byteOutline;
-        BYTE					byteLeft;
-        BYTE					byteRight;
-        int						iStyle;		// font style/texture/model
-        float					fX;
-        float					fY;
-        BYTE					unk[8];
-        DWORD					dword99B;	// -1 by default
-        DWORD					dword99F;	// -1 by default
-        DWORD					index;		// -1 if bad
-        BYTE					byte9A7;	// = 1; 0 by default
-        WORD					sModel;
-        float					fRot[3];
-        float					fZoom;
-        WORD					sColor[2];
-        BYTE					f9BE;
-        BYTE					byte9BF;
-        BYTE					byte9C0;
-        DWORD					dword9C1;
-        DWORD					dword9C5;
-        DWORD					dword9C9;
-        DWORD					dword9CD;
-        BYTE					byte9D1;
-        DWORD					dword9D2;
+        char           m_szText[801];
+        char           m_szString[1602];
+        float          m_fLetterWidth;
+        float          m_fLetterHeight;
+        D3DCOLOR       m_letterColor;
+        unsigned char  unknown;
+        unsigned char  m_bCenter;
+        unsigned char  m_bBox;
+        float          m_fBoxSizeX;
+        float          m_fBoxSizeY;
+        D3DCOLOR       m_boxColor;
+        unsigned char  m_nProportional;
+        D3DCOLOR       m_backgroundColor;
+        unsigned char  m_nShadow;
+        unsigned char  m_nOutline;
+        unsigned char  m_bLeft;
+        unsigned char  m_bRight;
+        int            m_nStyle;
+        float          m_fX;
+        float          m_fY;
+        unsigned char  pad_[8];
+        unsigned long  field_99B;
+        unsigned long  field_99F;
+        unsigned long  m_nIndex;
+        unsigned char  field_9A7;
+        unsigned short m_nModel;
+        CVector        m_rotation;
+        float          m_fZoom;
+        unsigned short m_aColor[2];
+        unsigned char  field_9BE;
+        unsigned char  field_9BF;
+        unsigned char  field_9C0;
+        unsigned long  field_9C1;
+        unsigned long  field_9C5;
+        unsigned long  field_9C9;
+        unsigned long  field_9CD;
+        unsigned char  field_9D1;
+        unsigned long  field_9D2;
     };
     
-    struct SFL_TextdrawPool
+    // CTextDrawPool
+    struct SFL_TextDrawPool
     {
-        int						iIsListed[SAMP_MAX_TEXTDRAWS];
-        int						iPlayerTextDraw[SAMP_MAX_PLAYERTEXTDRAWS];
-        struct SFL_Textdraw		*textdraw[SAMP_MAX_TEXTDRAWS];
-        struct SFL_Textdraw		*playerTextdraw[SAMP_MAX_PLAYERTEXTDRAWS];
+        BOOL          m_bNotEmpty[MAX_TEXTDRAWS + MAX_LOCAL_TEXTDRAWS];
+        SFL_TextDraw *m_pObject[MAX_TEXTDRAWS + MAX_LOCAL_TEXTDRAWS];
     };
     
+    // CPickupPool
     struct SFL_Pickup
     {
-        int						iModelID;
-        int						iType;
-        float					fPosition[3];
+        int     m_nModel;
+        int     m_nType;
+        CVector m_position;
+    };
+
+    struct SFL_WeaponPickup {
+        bool m_bExists;
+        ID   m_nExOwner;
     };
     
     struct SFL_PickupPool
     {
-        int						iPickupsCount;
-        DWORD					ul_GTA_PickupID[SAMP_MAX_PICKUPS];
-        int						iPickupID[SAMP_MAX_PICKUPS];
-        int						iTimePickup[SAMP_MAX_PICKUPS];
-        BYTE					unk[SAMP_MAX_PICKUPS * 3];
-        struct SFL_Pickup			pickup[SAMP_MAX_PICKUPS];
+        int              m_nCount;
+        GTAREF           m_handle[MAX_PICKUPS];
+        int              m_nId[MAX_PICKUPS];
+        unsigned long    m_nTimer[MAX_PICKUPS];
+        SFL_WeaponPickup m_weapon[MAX_PICKUPS];
+        SFL_Pickup       m_object[MAX_PICKUPS];
     };
     
+    // CPlayerPool
     struct SFL_PlayerPool
     {
-        DWORD					ulMaxPlayerID;
-        WORD					sLocalPlayerID;
-        void					*pVTBL_txtHandler;
-        stdstring				strLocalPlayerName;
-        struct SFL_LocalPlayer	*pLocalPlayer;
-        int						iLocalPlayerPing;
-        int						iLocalPlayerScore;
-        struct SFL_RemotePlayer	*pRemotePlayer[SAMP_MAX_PLAYERS];
-        int						iIsListed[SAMP_MAX_PLAYERS];
-        DWORD					dwPlayerIP[SAMP_MAX_PLAYERS]; // always 0
+        int m_nLargestId;
+        struct {
+            ID               m_nId;
+            int              __align;
+            stdstring        m_szName;
+            SFL_LocalPlayer *m_pObject;
+            int              m_nPing;
+            int              m_nScore;
+        } m_localInfo;
+
+        SFL_PlayerInfo *m_pObject[MAX_PLAYERS];
+        BOOL            m_bNotEmpty[MAX_PLAYERS];
+        BOOL            m_bPrevCollisionFlag[MAX_PLAYERS];
     };
     
     struct SFL_SAMPKeys
@@ -455,9 +504,26 @@ ffi.cdef[[
         int						iHeadSyncLookTick;
     };
     
+    // Animation.h
+    struct SFL_Animation {
+        union {
+            struct {
+                unsigned short m_nId : 16;
+                unsigned char  m_nFramedelta : 8;
+                unsigned char  m_nLoopA : 1;
+                unsigned char  m_nLockX : 1;
+                unsigned char  m_nLockY : 1;
+                unsigned char  m_nLockF : 1;
+                unsigned char  m_nTime : 2;
+            };
+            int m_value;
+        };
+    };
+    
+
     struct SFL_LocalPlayer
     {
-        struct SFL_SAMPPed		*pSAMP_Actor;
+        SFL_Ped *m_pPed;
         WORD					sCurrentAnimID;
         WORD					sAnimFlags;
         DWORD					ulUnk0;
@@ -516,9 +582,9 @@ ffi.cdef[[
         struct SFL_DamageData		vehicleDamageData;
     };
     
-    struct SFL_RemotePlayerData
+    struct SFL_RemotePlayer
     {
-        struct SFL_SAMPPed		*pSAMP_Actor;
+        struct SFL_Ped		*pSAMP_Actor;
         struct SFL_SAMPVehicle	*pSAMP_Vehicle;
         BYTE					byteTeamID;
         BYTE					bytePlayerState;
@@ -560,42 +626,69 @@ ffi.cdef[[
         DWORD					ulGlobalMarker_GTAID;
     };
     
-    struct SFL_RemotePlayer
+    // CPlayerInfo
+    struct SFL_PlayerInfo
     {
-        SFL_RemotePlayerData		*pPlayerData;
-        int						iIsNPC;
-        void					*pVTBL_txtHandler;
-        stdstring				strPlayerName;
-        int						iScore;
-        int						iPing;
+        SFL_RemotePlayer *m_pPlayer;
+        BOOL              m_bIsNPC;
+        unsigned int      __align;
+        stdstring         m_szNick;
+        int               m_nScore;
+        unsigned int      m_nPing;
     };
     
-    struct SFL_SAMPEntity
+    // CEntity
+    struct SFL_Entity
     {
-        void					*pVTBL;
-        BYTE					byteUnk0[60]; // game CEntity object maybe. always empty.
-        void					*pGTAEntity;
-        DWORD					ulGTAEntityHandle;
+        void          **m_lpVtbl;
+        char            pad_4[60];
+        struct CEntity *m_pGameEntity;
+        GTAREF          m_handle;
     };
     
-    struct SFL_SAMPPed
+    // CPed
+    struct SFL_Ped_Accessory {
+        int      m_nModel;
+        int      m_nBone;
+        CVector  m_offset;
+        CVector  m_rotation;
+        CVector  m_scale;
+        D3DCOLOR m_firstMaterialColor;
+        D3DCOLOR m_secondMaterialColor;
+    };
+
+    struct SFL_Ped
     {
-        SFL_SAMPEntity			actor_info;
-        int						usingCellPhone;
-        BYTE					byteUnk0[600];
-        struct actor_info		*pGTA_Ped;
-        BYTE					byteUnk1[22];
-        BYTE					byteKeysId;
-        WORD					ulGTA_UrinateParticle_ID;
-        int						DrinkingOrSmoking;
-        int						object_in_hand;
-        int						drunkLevel;
-        BYTE					byteUnk2[5];
-        int						isDancing;
-        int						danceStyle;
-        int						danceMove;
-        BYTE					byteUnk3[20];
-        int						isUrinating;
+        SFL_Entity entity;
+        BOOL       m_bUsingCellphone;
+
+        struct {
+            BOOL              m_bNotEmpty[MAX_ACCESSORIES];
+            SFL_Ped_Accessory m_info[MAX_ACCESSORIES];
+            struct CObject   *m_pObject[MAX_ACCESSORIES];
+        } m_accessories;
+
+        struct CPed *m_pGamePed;
+        int          pad_2a8[2];
+        NUMBER       m_nPlayerNumber;
+        int          pad_2b1[2];
+        GTAREF       m_parachuteObject;
+        GTAREF       m_urinatingParticle;
+
+        struct {
+            int    m_nType;
+            GTAREF m_object;
+            int    m_nDrunkLevel;
+        } m_stuff;
+
+        GTAREF m_arrow;
+        char   field_2de;
+        BOOL   m_bIsDancing;
+        int    m_nDanceStyle;
+        int    m_nLastDanceMove;
+        char   pad_2de[20];
+        BOOL   m_bIsUrinating;
+        char   pad[55];
     };
     
     struct SFL_VehiclePool
@@ -616,7 +709,7 @@ ffi.cdef[[
     
     struct SFL_SAMPVehicle
     {
-        SFL_SAMPEntity			vehicle_info;
+        SFL_Entity			vehicle_info;
         DWORD					bUnk0;
         struct vehicle_info		*pGTA_Vehicle;
         BYTE					byteUnk1[8];
@@ -633,7 +726,7 @@ ffi.cdef[[
     
     struct SFL_Object
     {
-        SFL_SAMPEntity			object_info;
+        SFL_Entity			object_info;
         BYTE					byteUnk0[2];
         DWORD					ulUnk1;
         int						iModel;
@@ -811,44 +904,47 @@ ffi.cdef[[
     
     struct SFL_Audio
     {
-        int						iSoundState; // 0 - Finished, 1 - Loaded, 2 - Playing
+        BOOL m_bSoundLoaded;
     };
     
     struct SFL_Camera
     {
-        void*				pEntity; // attached entity
-        void*				matrix;
+        SFL_Entity* m_pAttachedTo;
+        CMatrix* m_pMatrix;
     };
     
-    struct SFL_GameInfo
+    // CGame
+    struct SFL_Game
     {
-        SFL_Audio*				pAudio;
-        SFL_Camera*				pCamera;
-        SFL_SAMPPed*			pLocalPlayerPed;
-        float					fCheckpointPos[3];
-        float					fCheckpointExtent[3];
-        int						bCheckpointsEnabled;
-    
-        // not tested
-        DWORD					dwCheckpointMarker;
-        float					fRaceCheckpointPos[3];
-        float					fRaceCheckpointNext[3];
-        float					m_fRaceCheckpointSize;
-        BYTE					byteRaceType;
-    
-        int						bRaceCheckpointsEnabled;
-    
-        DWORD					dwRaceCheckpointMarker;
-        DWORD					dwRaceCheckpointHandle;
-    
-        int						iCursorMode;
-        DWORD					ulUnk1;
-        int						bClockEnabled;
-        DWORD					ulUnk2;
-        int						bHeadMove;
-        DWORD					ulFpsLimit;
-        BYTE					byteUnk3;
-        BYTE					byteVehicleModels[212];
+        SFL_Audio  *m_pAudio;
+        SFL_Camera *m_pCamera;
+        SFL_Ped    *m_pPlayerPed;
+
+        struct {
+            CVector m_position;
+            CVector m_size;
+            BOOL    m_bEnabled;
+            GTAREF  m_handle;
+        } m_checkpoint;    
+
+        struct {
+            CVector m_currentPosition;
+            CVector m_nextPosition;
+            float   m_fSize;
+            char    m_nType;
+            BOOL    m_bEnabled;
+            GTAREF  m_marker;
+            GTAREF  m_handle;
+        } m_racingCheckpoint;
+
+        int          m_nCursorMode;
+        unsigned int m_nInputEnableWaitFrames;
+        BOOL         m_bClockEnabled;
+        int          field_61;
+        BOOL         m_bHeadMove;
+        int          m_nFrameLimiter;
+        char         field_6d;
+        bool         m_aKeepLoadedVehicleModels[212];
     };
     
     struct SFL_ScoreboardInfo
@@ -868,22 +964,50 @@ ffi.cdef[[
     
     struct SFL_ActorPool
     {
-        int						iLastActorID;
-        SFL_SAMPEntity			*pActor[SAMP_MAX_ACTORS]; // ?
+        int     m_nLargestId;
+        SFL_Entity			*pActor[SAMP_MAX_ACTORS]; // ?
         int						iIsListed[SAMP_MAX_ACTORS];
-        struct SFL_SAMPPed		*pGTAPed[SAMP_MAX_ACTORS];
+        struct SFL_Ped		*pGTAPed[SAMP_MAX_ACTORS];
         DWORD					ulUnk0[SAMP_MAX_ACTORS];
         DWORD					ulUnk1[SAMP_MAX_ACTORS];
     };
     
     struct SFL_ChatBubbleInfo
     {
-        struct SFL_ChatPlayer	chatBubble[SAMP_MAX_PLAYERS];
+        struct SFL_ChatPlayer	chatBubble[MAX_PLAYERS];
     };
     
     struct SFL_StreamedOutPlayerInfo
     {
-        bool					iIsListed[SAMP_MAX_PLAYERS];
-        float					fPlayerPos[SAMP_MAX_PLAYERS][3];
+        bool					iIsListed[MAX_PLAYERS];
+        float					fPlayerPos[MAX_PLAYERS][3];
+    };
+
+    struct SFL_RakClientInterface_vtbl {
+        void *destructor, *Connect, *Disconnect, *InitializeSecurity, *SetPassword,
+             *HasPassword, *Send1;
+
+        bool(__thiscall *Send2)(SFL_RakClientInterface *this, SFL_BitStream *bitStream, int priority, int reliability, char orderingChannel);
+
+        void *Receive, *DeallocatePacket, *PingServer1, *PingServer2, *GetAveragePing,
+             *GetLastPing, *GetLowestPing, *GetPlayerPing, *StartOccasionalPing,
+             *StopOccasionalPing, *IsConnected, *GetSynchronizedRandomInteger,
+             *GenerateCompressionLayer, *DeleteCompressionLayer, *RegisterAsRemoteProcedureCall,
+             *RegisterClassMemberRPC, *UnregisterAsRemoteProcedureCall, *RPC1;
+
+        bool(__thiscall *RPC2)(SFL_RakClientInterface *this, int *uniqueID, SFL_BitStream *bitStream, int priority, int reliability, char orderingChannel, bool shiftTimestamp);
+
+        void *RPC3, *SetTrackFrequencyTable, *GetSendFrequencyTable, *GetCompressionRatio,
+             *GetDecompressionRatio, *AttachPlugin, *DetachPlugin, *GetStaticServerData,
+             *SetStaticServerData, *GetStaticClientData, *SetStaticClientData,
+             *SendStaticClientDataToServer, *GetServerID, *GetPlayerID, *GetInternalID,
+             *PlayerIDToDottedIP, *PushBackPacket, *SetRouterInterface, *RemoveRouterInterface,
+             *SetTimeoutTime, *SetMTUSize, *GetMTUSize, *AllowConnectionResponseIPMigration,
+             *AdvertiseSystem, *GetStatistics, *ApplyNetworkSimulator, *IsNetworkSimulatorActive,
+             *GetPlayerIndex;
+    };
+
+    struct SFL_RakClientInterface {
+        struct SFL_RakClientInterface_vtbl *vtbl;
     };
 ]]

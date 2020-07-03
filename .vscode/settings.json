@@ -1,0 +1,42 @@
+{
+    "Lua.diagnostics.globals": [
+        "VERSION_0_3_7_R1",
+        "VERSION_UNKNOWN",
+        "GAMESTATE_NONE",
+        "GAMESTATE_WAIT_CONNECT",
+        "GAMESTATE_AWAIT_JOIN",
+        "GAMESTATE_CONNECTED",
+        "GAMESTATE_RESTARTING",
+        "GAMESTATE_DISCONNECTED",
+        "getStructElement",
+        "setStructElement",
+        "CMODE_LOCKCAM",
+        "CMODE_DISABLED",
+        "MAX_PLAYERS",
+        "playerPed",
+        "getCharPointerHandle",
+        "getCharArmour",
+        "getCharHealth",
+        "doesCharExist",
+        "MAX_PLAYER_NAME",
+        "isCharDead",
+        "MAX_CLIENTCMDS",
+        "CHAT_TYPE_DEBUG",
+        "MAX_3DTEXTS",
+        "getVehiclePointerHandle",
+        "MAX_VEHICLES",
+        "getObjectPointerHandle",
+        "MAX_PICKUPS",
+        "getModuleHandle",
+        "script_url",
+        "script_name",
+        "script_author",
+        "thisScript",
+        "wait",
+        "lua_thread",
+        "consumeWindowMessage"
+    ],
+    "Lua.diagnostics.disable": [
+        "lowercase-global"
+    ]
+}

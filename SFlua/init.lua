@@ -4,7 +4,6 @@
     Authors: look in file <AUTHORS>.
 ]]
 
-local ffi = require 'ffi'
 local memory = require 'memory'
 
 require 'SFlua.cdef'
@@ -14,14 +13,14 @@ local versions = {
     [0x31DF13] = { VERSION_0_3_7_R1, 'SFlua.037-r1' }
 }
 
-local currentVersion, sampModule = nil, getModuleHandle("samp.dll")
+local currentVersion, sampModule = nil, getModuleHandle('samp.dll')
 
 function isSampLoaded()
     if sampModule <= 0 then return false end
     
     if not currentVersion then
         -- Getting version taken from SAMP-API (thx fyp)
-        local ntheader = sampModule + memory.getint32(sampModule + 0x3C)
+        local ntheader = sampModule + memory.getuint32(sampModule + 0x3C)
         local ep = memory.getuint32(ntheader + 0x28)
         currentVersion = versions[ep]
         if not currentVersion then
