@@ -10,16 +10,14 @@ local ffi = require 'ffi'
 local bit = require 'bit'
 
 ffi.cdef[[
-void *malloc(size_t size);
-void free(void * ptrmem);
-void *realloc(void *ptr, size_t newsize);
-void *memset(void *memptr, int val, size_t num);
+void* VirtualAlloc(void* ptr, size_t size, unsigned long allocationType, unsigned long protect);
+int VirtualFree(void* ptr, size_t size, unsigned long freeType);
 
 typedef unsigned char BYTE;
 
 #pragma pack(push, 1)
 
-typedef struct
+typedef struct SFL_BitStream
 {
 	int						numberOfBitsUsed;
 	int						numberOfBitsAllocated;
@@ -32,11 +30,28 @@ typedef struct
 #pragma pack(pop)
 ]]
 
+local valloc, vfree = ffi.C.VirtualAlloc, ffi.C.VirtualFree
 local lshift, band, rshift, bor = bit.lshift, bit.band, bit.rshift, bit.bor
 local cast, sizeof, gc, typeof, istype, new = ffi.cast, ffi.sizeof, ffi.gc, ffi.typeof, ffi.istype, ffi.new
-local malloc, free, memcpy, memset, realloc = ffi.C.malloc, ffi.C.free, ffi.copy, ffi.C.memset, ffi.C.realloc
+local memcpy, memset = ffi.copy, ffi.fill
 
 local BITSTREAM_STACK_ALLOCATION_SIZE = 256
+
+local function malloc(size)
+	return valloc(cast("void*", 0), size, --[[MEM_COMMIT]]0x00001000 + --[[MEM_RESERVE]]0x00002000, --[[PAGE_EXECUTE_READWRITE]]0x40)
+end
+
+local function free(ptr)
+	return vfree(cast("void*", ptr), sizeof(ptr), --[[MEM_FREE]]0x00008000)
+end
+
+local function realloc(ptr, size) 
+	local reallocated_data = malloc(size)
+	local size_ptr = sizeof(ptr)
+	memcpy(reallocated_data, ptr, size_ptr > size and size or size_ptr)
+	free(ptr)
+	return reallocated_data
+end
 
 local function BYTES_TO_BITS(x) return lshift(x, 3) end
 local function BITS_TO_BYTES(x) return rshift(x + 7, 3) end
