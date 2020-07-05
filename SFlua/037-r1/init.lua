@@ -14,15 +14,14 @@ local bs = require 'SFlua.bitstream'
 
 local samp_C = {
     -- CNetGame
-    sendSCM = ffi.cast('void(__cdecl *)(int type, WORD id, int param1, int param2)', sampGetBase() + 0x1A50),
-    sendGiveDmg = ffi.cast('void(__stdcall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', sampGetBase() + 0x6770),
-    sendTakeDmg = ffi.cast('void(__stdcall *)(WORD id, float damage, DWORD weapon, DWORD bodypart)', sampGetBase() + 0x6660),
+    sendGiveDmg = ffi.cast('void(__stdcall *)(int nId, float fDamage, int nWeapon, int nBodyPart)', sampGetBase() + 0x6770),
+    sendTakeDmg = ffi.cast('void(__stdcall *)(int nId, float fDamage, int nWeapon, int nBodyPart)', sampGetBase() + 0x6660),
     sendReqSpwn = ffi.cast('void(__cdecl *)()', sampGetBase() + 0x3A20),
 
     -- CDialog
     showDialog = ffi.cast('void(__thiscall*)(SFL_Dialog *this, int nId, int nType, const char *szCaption, const char *szText, const char *szLeftButton, const char *szRightButton, BOOL bServerside)', sampGetBase() + 0x6B9C0),
     closeDialog = ffi.cast('void(__thiscall *)(SFL_Dialog *this, char nProcessButton)', sampGetBase() + 0x6C040),
-    
+
     -- DXUT
     getControl = ffi.cast('void*(__thiscall *)(struct CDXUTDialog *this, int ID, unsigned int nControlType)', sampGetBase() + 0x82C50), -- CDXUTControl* GetControl( int ID, UINT nControlType );
     getEditboxText = ffi.cast('const char*(__thiscall *)(struct CDXUTIMEEditBox *this)', sampGetBase() + 0x81030),
@@ -86,27 +85,27 @@ end
 -- Pointers to structures
 
 function sampGetSampInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A0F8 )
+    return memory.getuint32(sampGetBase() + 0x21A0F8)
 end
 
 function sampGetDialogInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A0B8 )
+    return memory.getuint32(sampGetBase() + 0x21A0B8)
 end
 
 function sampGetMiscInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A10C )
+    return memory.getuint32(sampGetBase() + 0x21A10C)
 end
 
 function sampGetInputInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A0E8 )
+    return memory.getuint32(sampGetBase() + 0x21A0E8)
 end
 
 function sampGetChatInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A0E4 )
+    return memory.getuint32(sampGetBase() + 0x21A0E4)
 end
 
 function sampGetKillInfoPtr() check_samp_loaded()
-    return memory.getint32( sampGetBase() + 0x21A0EC )
+    return memory.getuint32(sampGetBase() + 0x21A0EC)
 end
 
 function sampGetSampPoolsPtr() check_samp_available()
@@ -153,10 +152,10 @@ local availables = {
     { 'sampGetSampInfoPtr', 'samp', 'NetGame' },
     { 'sampGetDialogInfoPtr', 'dialog', 'Dialog' },
     { 'sampGetMiscInfoPtr', 'misc', 'Game' },
-    { 'sampGetInputInfoPtr', 'input', 'InputInfo' },
-    { 'sampGetChatInfoPtr', 'chat', 'ChatInfo' },
-    { 'sampGetKillInfoPtr', 'killinfo', 'KillInfo' },
-    { 'sampGetScoreboardInfoPtr', 'scoreboard', 'ScoreboardInfo' }
+    { 'sampGetInputInfoPtr', 'input', 'Input' },
+    { 'sampGetChatInfoPtr', 'chat', 'Chat' },
+    { 'sampGetKillInfoPtr', 'killinfo', 'DeathWindow' },
+    { 'sampGetScoreboardInfoPtr', 'scoreboard', 'Scoreboard' }
 }
 
 function isSampAvailable() check_samp_loaded()
@@ -222,10 +221,6 @@ function sampSetGamestate(gamestate) check_samp_available()
             break
         end
     end
-end
-
-function sampSendScmEvent(event, id, param1, param2) check_samp_available()
-    samp_C.sendSCM(id, event, param1, param2)
 end
 
 function sampSendGiveDamage(id, damage, weapon, bodypart) check_samp_available()
@@ -431,16 +426,16 @@ end
 
 function sampGetCharHandleBySampPlayerId(id) check_samp_available()
     id = tonumber(id) or 0
-    if id == sampGetLocalPlayerId() then return true, playerPed
+    if id == sampGetLocalPlayerId() then return true, PLAYER_PED
     elseif sampIsPlayerDefined(id) then
-        return true, getCharPointerHandle(add.GET_POINTER(samp_C.player.m_pObject[id].m_pPlayer.pSAMP_Actor.m_pGamePed))
+        return true, getCharPointerHandle(add.GET_POINTER(samp_C.player.m_pObject[id].m_pPlayer.m_pPed.m_pGamePed))
     end
     return false, -1
 end
 
 function sampGetPlayerIdByCharHandle(ped) check_samp_available()
     ped = tonumber(ped) or 0
-    if ped == playerPed then return true, sampGetLocalPlayerId() end
+    if ped == PLAYER_PED then return true, sampGetLocalPlayerId() end
     for i = 0, MAX_PLAYERS - 1 do
         local res, pped = sampGetCharHandleBySampPlayerId(i)
         if res and pped == ped then return true, i end
@@ -451,8 +446,8 @@ end
 function sampGetPlayerArmor(id) check_samp_available()
     id = tonumber(id) or 0
     if sampIsPlayerDefined(id) then
-        if id == sampGetLocalPlayerId() then return getCharArmour(playerPed) end
-        return samp_C.player.m_pObject[id].m_pPlayer.fActorArmor
+        if id == sampGetLocalPlayerId() then return getCharArmour(PLAYER_PED) end
+        return samp_C.player.m_pObject[id].m_pPlayer.m_fReportedArmour
     end
     return 0
 end
@@ -460,8 +455,8 @@ end
 function sampGetPlayerHealth(id) check_samp_available()
     id = tonumber(id) or 0
     if sampIsPlayerDefined(id) then
-        if id == sampGetLocalPlayerId() then return getCharHealth(playerPed) end
-        return samp_C.player.m_pObject[id].m_pPlayer.fActorHealth
+        if id == sampGetLocalPlayerId() then return getCharHealth(PLAYER_PED) end
+        return samp_C.player.m_pObject[id].m_pPlayer.m_fReportedHealth
     end
     return 0
 end
@@ -474,7 +469,7 @@ function sampSetSpecialAction(action) check_samp_available()
 end
 
 function sampGetPlayerCount(streamed) check_samp_available()
-    if not streamed then return samp_C.scoreboard.iPlayersCount - 1 end
+    if not streamed then return samp_C.scoreboard.m_nPlayerCount - 1 end
     local players = 0
     for i = 0, MAX_PLAYERS - 1 do
         if i ~= sampGetLocalPlayerId() then
@@ -504,7 +499,7 @@ end
 
 function sampGetPlayerSpecialAction(id) check_samp_available()
     id = tonumber(id) or 0
-    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.byteSpecialAction end
+    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.m_nSpecialAction end
     return -1
 end
 
@@ -512,51 +507,51 @@ function sampStorePlayerOnfootData(id, data) check_samp_available()
     id = tonumber(id) or 0
     data = tonumber(data) or 0
     local struct
-    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.onFootData
-    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.onFootData end
-    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('struct onFootData')) end
+    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.m_onfootData
+    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.m_onfootData end
+    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('SFL_OnfootData')) end
 end
 
 function sampIsPlayerPaused(id) check_samp_available()
     id = tonumber(id) or 0
     if id == sampGetLocalPlayerId() then return false end
-    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.iAFKState == 0 end
+    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.m_nStatus == 0 end
 end
 
 function sampStorePlayerIncarData(id, data) check_samp_available()
     id = tonumber(id) or 0
     data = tonumber(data) or 0
     local struct
-    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.inCarData
-    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.inCarData end
-    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('struct stInCarData')) end
+    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.m_incarData
+    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.m_incarData end
+    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('SFL_IncarData')) end
 end
 
 function sampStorePlayerPassengerData(id, data) check_samp_available()
     id = tonumber(id) or 0
     data = tonumber(data) or 0
     local struct
-    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.passengerData
-    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.passengerData end
-    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('struct stPassengerData')) end
+    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.m_passengerData
+    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.m_passengerData end
+    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('SFL_PassengerData')) end
 end
 
 function sampStorePlayerTrailerData(id, data) check_samp_available()
     id = tonumber(id) or 0
     data = tonumber(data) or 0
     local struct
-    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.trailerData
-    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.trailerData end
-    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('struct stTrailerData')) end
+    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.m_trailerData
+    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.m_trailerData end
+    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('SFL_TrailerData')) end
 end
 
 function sampStorePlayerAimData(id, data) check_samp_available()
     id = tonumber(id) or 0
     data = tonumber(data) or 0
     local struct
-    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.aimData
-    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.aimData end
-    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('struct stAimData')) end
+    if id == sampGetLocalPlayerId() then struct = samp_C.player.pLocalPlayer.m_aimData
+    elseif sampIsPlayerDefined(id) then struct = samp_C.player.m_pObject[id].m_pPlayer.m_aimData end
+    if struct then memory.copy(data, add.GET_POINTER(struct), ffi.sizeof('SFL_AimData')) end
 end
 
 function sampSendSpawn() check_samp_available()
@@ -565,8 +560,8 @@ end
 
 function sampGetPlayerAnimationId(id) check_samp_available()
     id = tonumber(id) or 0
-    if id == sampGetLocalPlayerId() then return samp_C.player.pLocalPlayer.sCurrentAnimID end
-    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.onFootData.sCurrentAnimationID end
+    if id == sampGetLocalPlayerId() then return samp_C.player.pLocalPlayer.m_animation.m_nId end
+    if sampIsPlayerConnected(id) then return samp_C.player.m_pObject[id].m_pPlayer.m_onfootData.m_animation.m_nId end
 end
 
 function sampSetLocalPlayerName(name) check_samp_available()
@@ -593,17 +588,17 @@ end
 
 function sampIsLocalPlayerSpawned() check_samp_available()
     local local_player = samp_C.player.pLocalPlayer
-    return local_player.iSpawnClassLoaded == 1 and local_player.iIsActorAlive == 1 and ( local_player.iIsActive == 1 or isCharDead(playerPed) )
+    return local_player.m_bClearedToSpawn == 1 and local_player.m_bHasSpawnInfo == 1 and ( local_player.m_bIsActive == 1 or isCharDead(PLAYER_PED) )
 end
 
 -- stInputInfo
 
 function sampUnregisterChatCommand(name) check_samp_available()
     for i = 0, MAX_CLIENTCMDS - 1 do
-        if ffi.string(samp_C.input.szCMDNames[i]) == tostring(name) then
-            samp_C.input.szCMDNames[i] = ffi.new('char[33]') --ffi.new('char[?]', 33)
-            samp_C.input.pCMDs[i] = nil
-            samp_C.input.iCMDCount = samp_C.input.iCMDCount - 1
+        if ffi.string(samp_C.input.m_szCommandName[i]) == tostring(name) then
+            samp_C.input.m_szCommandName[i] = '\0'
+            samp_C.input.m_pCommandProc[i] = nil
+            samp_C.input.m_nCommandCount = samp_C.input.m_nCommandCount - 1
             return true
         end
     end
@@ -613,7 +608,7 @@ end
 function sampRegisterChatCommand(name, function_)
     name = tostring(name) check_samp_available()
     assert(type(function_) == 'function', '"'..tostring(function_)..'" is not function.')
-    assert(samp_C.input.iCMDCount < MAX_CLIENTCMDS, 'Couldn\'t initialize "'..name..'". Maximum command amount reached.')
+    assert(samp_C.input.m_nCommandCount < MAX_CLIENTCMDS, 'Couldn\'t initialize "'..name..'". Maximum command amount reached.')
     assert(#name < 30, 'Command name "'..tostring(name)..'" was too long.')
     sampUnregisterChatCommand(name)
     local char = ffi.cast('PCHAR', name)
@@ -625,11 +620,11 @@ function sampRegisterChatCommand(name, function_)
 end
 
 function sampSetChatInputText(text) check_samp_available()
-    samp_C.setEditboxText(samp_C.input.pDXUTEditBox, ffi.cast('PCHAR', text), 0)
+    samp_C.setEditboxText(samp_C.input.m_pEditbox, ffi.cast('PCHAR', text), 0)
 end
 
 function sampGetChatInputText() check_samp_available()
-    return ffi.string(samp_C.getEditboxText(samp_C.input.pDXUTEditBox))
+    return ffi.string(samp_C.getEditboxText(samp_C.input.m_pEditbox))
 end
 
 function sampSetChatInputEnabled(enabled) check_samp_available()
@@ -637,13 +632,13 @@ function sampSetChatInputEnabled(enabled) check_samp_available()
 end
 
 function sampIsChatInputActive() check_samp_available()
-    return samp_C.input.pDXUTEditBox.bIsChatboxOpen == 1
+    return samp_C.input.m_bEnabled == 1
 end
 
 function sampIsChatCommandDefined(name) check_samp_available()
     name = tostring(name)
     for i = 0, MAX_CLIENTCMDS - 1 do
-        if ffi.string(samp_C.input.szCMDNames[i]) == name then return true end
+        if ffi.string(samp_C.input.m_szCommandName[i]) == name then return true end
     end
     return false
 end
@@ -655,29 +650,29 @@ function sampAddChatMessage(text, color) check_samp_available()
 end
 
 function sampGetChatDisplayMode() check_samp_available()
-    return samp_C.chat.iChatWindowMode
+    return samp_C.chat.m_nMode
 end
 
 function sampSetChatDisplayMode(id) check_samp_available()
     id = tonumber(id) or 0
-    samp_C.chat.iChatWindowMode = id
+    samp_C.chat.m_nMode = id
 end
 
 function sampGetChatString(id) check_samp_available()
     id = tonumber(id) or 0
     if id < 0 or id > 100 then return end
-    local current = samp_C.chat.chatEntry[id]
-    return ffi.string(current.szText), ffi.string(current.szPrefix), current.clTextColor, current.clPrefixColor
+    local current = samp_C.chat.m_entry[id]
+    return ffi.string(current.m_szText), ffi.string(current.m_szPrefix), current.m_textColor, current.m_prefixColor
 end
 
 function sampSetChatString(id, text, prefix, color_t, color_p) check_samp_available()
     id = tonumber(id) or 0
     if id < 0 or id > 100 then return end
-    local current = samp_C.chat.chatEntry[id]
-    current.szText = ffi.new('char[?]', 144, tostring(text))
-    current.szPrefix = ffi.new('char[?]', 28, tostring(prefix))
-    current.clTextColor = color_t
-    current.clPrefixColor = color_p
+    local current = samp_C.chat.m_entry[id]
+    current.m_szText = tostring(text)
+    current.m_szPrefix = tostring(prefix)
+    current.m_textColor = color_t
+    current.m_prefixColor = color_p
 end
 
 function sampIsChatVisible() check_samp_available()
@@ -872,7 +867,7 @@ function sampToggleScoreboard(showed) check_samp_available()
 end
 
 function sampIsScoreboardOpen() check_samp_available()
-    return samp_C.scoreboard.iIsEnabled == 1
+    return samp_C.scoreboard.m_bIsEnabled == 1
 end
 
 -- stTextLabelPool
@@ -890,21 +885,22 @@ end
 
 function sampIs3dTextDefined(id) check_samp_available()
     id = tonumber(id) or 0
-    return samp_C.text3d.iIsListed[id] == 1
+    return samp_C.text3d.m_bNotEmpty[id] == 1
 end
 
 function sampGet3dTextInfoById(id) check_samp_available()
     id = tonumber(id) or 0
     if sampIs3dTextDefined(id) then
-        local t = samp_C.text3d.textLabel[id]
-        return ffi.string(t.pText), t.color, t.fPosition[0], t.fPosition[1], t.fPosition[2], t.fMaxViewDistance, t.byteShowBehindWalls == 1, t.sAttachedToPlayerID, t.sAttachedToVehicleID
+        local t = samp_C.text3d.m_object[id]
+        return ffi.string(t.m_pText), t.m_color, t.m_position.x, t.m_position.y, t.m_position.z,
+            t.m_fDrawDistance, t.m_bBehindWalls, t.m_nAttachedToPlayer, t.m_nAttachedToVehicle
     end
 end
 
 function sampSet3dTextString(id, text) check_samp_available()
     id = tonumber(id) or 0
     if sampIs3dTextDefined(id) then
-        samp_C.text3d.textLabel[id].pText = ffi.cast('PCHAR', tostring(text))
+        samp_C.text3d.m_object[id].m_pText = ffi.cast('char*', tostring(text))
     end
 end
 
@@ -925,7 +921,7 @@ end
 
 function sampGetCarHandleBySampVehicleId(id) check_samp_available()
     id = tonumber(id) or 0
-    if sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(add.GET_POINTER(samp_C.car.pSAMP_Vehicle[id].pGTA_Vehicle)) end
+    if sampIsVehicleDefined(id) then return true, getVehiclePointerHandle(add.GET_POINTER(samp_C.car.m_pGameObject[id])) end
     return false, -1
 end
 
@@ -941,9 +937,10 @@ end
 
 function sampGetObjectHandleBySampId(id) check_samp_available()
     id = tonumber(id) or 0
-    if samp_C.object.iIsListed[id] == 1 then
-        return getObjectPointerHandle(add.GET_POINTER(samp_C.object[id].object_info))
+    if samp_C.object.m_bNotEmpty[id] == 1 then
+        return samp_C.object.m_pObject[id].entity.m_handle
     end
+    return -1
 end
 
 -- stPickupPool
@@ -1352,7 +1349,7 @@ end
 
 function sampIsVehicleDefined(id) check_samp_available()
     id = tonumber(id) or 0
-    return samp_C.car.iIsListed[id] == 1 and samp_C.car.pSAMP_Vehicle[id] and samp_C.car.pSAMP_Vehicle[id].pGTA_Vehicle
+    return samp_C.car.m_bNotEmpty[id] == 1 and samp_C.car.m_pObject[id] ~= nil and samp_C.car.m_pGameObject[id] ~= nil
 end
 
 -- stPlayerPool
@@ -1360,8 +1357,8 @@ end
 function sampIsPlayerDefined(id) check_samp_available()
     id = tonumber(id) or 0
     if id == sampGetLocalPlayerId() then return samp_C.player.pLocalPlayer ~= nil end
-    return sampIsPlayerConnected(id) and samp_C.player.m_pObject[id] and samp_C.player.m_pObject[id].m_pPlayer and
-        samp_C.player.m_pObject[id].m_pPlayer.pSAMP_Actor and samp_C.player.m_pObject[id].m_pPlayer.pSAMP_Actor.m_pGamePed
+    return sampIsPlayerConnected(id) and samp_C.player.m_pObject[id] ~= nil and samp_C.player.m_pObject[id].m_pPlayer ~= nil and
+        samp_C.player.m_pObject[id].m_pPlayer.m_pPed ~= nil and samp_C.player.m_pObject[id].m_pPlayer.m_pPed.m_pGamePed ~= nil
 end
 
 function sampGetLocalPlayerNickname() check_samp_available()

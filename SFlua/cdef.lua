@@ -78,4 +78,6 @@ ffi.cdef[[
         RECT rcActive;
         bool bVisible;
     };
+
+    struct IDirect3DTexture9;
 ]]

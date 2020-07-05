@@ -36,59 +36,6 @@ require 'SFlua.cdef'
 require 'SFlua.bitstream'
 
 ffi.cdef[[
-    /*typedef struct SFL_SAMPPools SFL_SAMPPools;
-    typedef struct SFL_NetGame SFL_NetGame;
-    typedef struct SFL_ServerInfo SFL_ServerInfo;
-    typedef struct SFL_ServerPresets SFL_ServerPresets;
-    typedef struct SFL_Dialog SFL_Dialog;
-    typedef struct SFL_TextDrawTransmit SFL_TextDrawTransmit;
-    typedef struct SFL_Textdraw SFL_Textdraw;
-    typedef struct SFL_TextdrawPool SFL_TextdrawPool;
-    typedef struct SFL_Pickup SFL_Pickup;
-    typedef struct SFL_PickupPool SFL_PickupPool;
-    typedef struct SFL_PlayerPool SFL_PlayerPool;
-    typedef struct SFL_SAMPKeys SFL_SAMPKeys;
-    typedef struct SFL_OnFootData SFL_OnFootData;
-    typedef struct SFL_InCarData SFL_InCarData;
-    typedef struct SFL_AimData SFL_AimData;
-    typedef struct SFL_TrailerData SFL_TrailerData;
-    typedef struct SFL_PassengerData SFL_PassengerData;
-    typedef struct SFL_DamageData SFL_DamageData;
-    typedef struct SFL_SurfData SFL_SurfData;
-    typedef struct SFL_UnoccupiedData SFL_UnoccupiedData;
-    typedef struct SFL_BulletData SFL_BulletData;
-    typedef struct SFL_SpectatorData SFL_SpectatorData;
-    typedef struct SFL_StatsData SFL_StatsData;
-    typedef struct SFL_HeadSync SFL_HeadSync;
-    typedef struct SFL_LocalPlayer SFL_LocalPlayer;*/
-    typedef struct SFL_RemotePlayer SFL_RemotePlayer;
-    /*typedef struct SFL_PlayerInfo SFL_PlayerInfo;*/
-    typedef struct SFL_Entity SFL_Entity;
-    typedef struct SFL_Ped SFL_Ped;
-    /*typedef struct SFL_VehiclePool SFL_VehiclePool;
-    typedef struct SFL_SAMPVehicle SFL_SAMPVehicle;
-    typedef struct SFL_Object SFL_Object;
-    typedef struct SFL_ObjectPool SFL_ObjectPool;
-    typedef struct SFL_Gangzone SFL_Gangzone;
-    typedef struct SFL_GangzonePool SFL_GangzonePool;
-    typedef struct SFL_TextLabel SFL_TextLabel;
-    typedef struct SFL_TextLabelPool SFL_TextLabelPool;
-    typedef struct SFL_ChatEntry SFL_ChatEntry;*/
-    typedef struct SFL_FontRenderer SFL_FontRenderer;
-    /*typedef struct SFL_ChatInfo SFL_ChatInfo;*/
-    typedef struct SFL_InputBox SFL_InputBox;
-    /*typedef struct SFL_InputInfo SFL_InputInfo;
-    typedef struct SFL_KillEntry SFL_KillEntry;
-    typedef struct SFL_KillInfo SFL_KillInfo;
-    typedef struct SFL_ChatPlayer SFL_ChatPlayer;*/
-    typedef struct SFL_Audio SFL_Audio;
-    /*typedef struct SFL_GameInfo SFL_GameInfo;
-    typedef struct SFL_ScoreboardInfo SFL_ScoreboardInfo;
-    typedef struct SFL_ActorPool SFL_ActorPool;
-    typedef struct SFL_ChatBubbleInfo SFL_ChatBubbleInfo;
-    typedef struct SFL_StreamedOutPlayerInfo SFL_StreamedOutPlayerInfo;*/
-    typedef struct SFL_Camera SFL_Camera;
-
     typedef struct SFL_NetGame            SFL_NetGame;
     typedef struct SFL_Settings           SFL_Settings;
     typedef struct SFL_Pools              SFL_Pools;
@@ -109,23 +56,57 @@ ffi.cdef[[
     typedef struct SFL_Ped_Accessory      SFL_Ped_Accessory;
     typedef struct SFL_Ped                SFL_Ped;
     typedef struct SFL_Animation          SFL_Animation;
+    typedef struct SFL_ControllerState    SFL_ControllerState;
+    typedef struct SFL_IncarData          SFL_IncarData;
+    typedef struct SFL_OnfootData         SFL_OnfootData;
+    typedef struct SFL_AimData            SFL_AimData;
+    typedef struct SFL_TrailerData        SFL_TrailerData;
+    typedef struct SFL_PassengerData      SFL_PassengerData;
+    typedef struct SFL_UnoccupiedData     SFL_UnoccupiedData;
+    typedef struct SFL_BulletData         SFL_BulletData;
+    typedef struct SFL_SpectatorData      SFL_SpectatorData;
+    typedef struct SFL_StatsData          SFL_StatsData;
+    typedef struct SFL_RemotePlayer       SFL_RemotePlayer;
+    typedef struct SFL_VehicleInfo        SFL_VehicleInfo;
+    typedef struct SFL_Vehicle            SFL_Vehicle;
+    typedef struct SFL_ObjectPool         SFL_ObjectPool;
+    typedef struct SFL_GangzonePool       SFL_GangzonePool;
+    typedef struct SFL_LabelPool          SFL_LabelPool;
+    typedef struct SFL_VehiclePool        SFL_VehiclePool;
+    typedef struct SFL_MaterialText       SFL_MaterialText;
+    typedef struct SFL_ObjectMaterial     SFL_ObjectMaterial;
+    typedef struct SFL_Object             SFL_Object;
+    typedef struct SFL_Gangzone           SFL_Gangzone;
+    typedef struct SFL_TextLabel          SFL_TextLabel;
+    typedef struct SFL_ChatEntry          SFL_ChatEntry;
+    typedef struct SFL_Chat               SFL_Chat;
+    typedef struct SFL_Input              SFL_Input;
+    typedef struct SFL_KillEntry          SFL_KillEntry;
+    typedef struct SFL_DeathWindow        SFL_DeathWindow;
+    typedef struct SFL_Camera             SFL_Camera;
     
     enum Limits
     {
         SAMP_MAX_ACTORS      = 1000,
         MAX_PLAYERS          = 1004,
-        SAMP_MAX_VEHICLES    = 2000,
+        MAX_VEHICLES         = 2000,
         MAX_PICKUPS          = 4096,
-        SAMP_MAX_OBJECTS     = 1000,
-        SAMP_MAX_GANGZONES   = 1024,
-        SAMP_MAX_3DTEXTS     = 2048,
+        MAX_OBJECTS          = 1000,
+        MAX_GANGZONES        = 1024,
+        MAX_TEXT_LABELS      = 2048,
         MAX_TEXTDRAWS        = 2048,
         MAX_LOCAL_TEXTDRAWS  = 256,
-        SAMP_MAX_CLIENTCMDS  = 144,
+        MAX_CLIENT_CMDS      = 144,
         SAMP_MAX_MENUS       = 128,
         SAMP_MAX_PLAYER_NAME = 24,
 
-        MAX_ACCESSORIES = 10
+        MAX_ACCESSORIES        = 10,
+        WAITING_LIST_SIZE      = 100,
+        LICENSE_PLATE_TEXT_LEN = 32,
+        MAX_MATERIALS          = 16,
+        MAX_MESSAGES           = 100,
+        MAX_CMD_LENGTH         = 32,
+        MAX_DEATHMESSAGES      = 5
     };
     
     #pragma pack(push, 1)
@@ -133,15 +114,15 @@ ffi.cdef[[
     // CNetGame
     struct SFL_Pools
     {
-        struct SFL_ActorPool     *m_pActor;
-        struct SFL_ObjectPool    *m_pObject;
-        struct SFL_GangzonePool  *m_pGangzone;
-        struct SFL_TextLabelPool *m_pLabel;
-        struct SFL_TextDrawPool  *m_pTextdraw;
-        void                     *m_pMenu;
-        struct SFL_PlayerPool    *m_pPlayer;
-        struct SFL_VehiclePool   *m_pVehicle;
-        struct SFL_PickupPool    *m_pPickup;
+        void              *m_pActor;
+        SFL_ObjectPool    *m_pObject;
+        SFL_GangzonePool  *m_pGangzone;
+        SFL_LabelPool     *m_pLabel;
+        SFL_TextDrawPool  *m_pTextdraw;
+        void              *m_pMenu;
+        SFL_PlayerPool    *m_pPlayer;
+        SFL_VehiclePool   *m_pVehicle;
+        SFL_PickupPool    *m_pPickup;
     };
 
     struct SFL_Settings
@@ -329,182 +310,36 @@ ffi.cdef[[
         BOOL            m_bNotEmpty[MAX_PLAYERS];
         BOOL            m_bPrevCollisionFlag[MAX_PLAYERS];
     };
+
+    // ControllerState
+    struct SFL_ControllerState {
+        short m_sLeftStickX; // move/steer left = -128, right = 128
+        short m_sLeftStickY; // move back = 128, forwards = -128
+        union {
+            struct {
+                unsigned char m_bLeftShoulder1 : 1;  // fire weapon alt
+                unsigned char m_bShockButtonL : 1;   // crouch
+                unsigned char m_bButtonCircle : 1;   // fire weapon
+                unsigned char m_bButtonCross : 1;    // sprint, accelerate
+                unsigned char m_bButtonTriangle : 1; // enter/exit vehicle
+                unsigned char m_bButtonSquare : 1;   // jump, reverse
+                unsigned char m_bRightShoulder2 : 1; // look right (incar)
+                unsigned char m_bRightShoulder1 : 1; // hand brake, target
     
-    struct SFL_SAMPKeys
-    {
-        BYTE keys_primaryFire : 1;
-        BYTE keys_horn__crouch : 1;
-        BYTE keys_secondaryFire__shoot : 1;
-        BYTE keys_accel__zoomOut : 1;
-        BYTE keys_enterExitCar : 1;
-        BYTE keys_decel__jump : 1;			// on foot: jump or zoom in
-        BYTE keys_circleRight : 1;
-        BYTE keys_aim : 1;					// hydra auto aim or on foot aim
-        BYTE keys_circleLeft : 1;
-        BYTE keys_landingGear__lookback : 1;
-        BYTE keys_unknown__walkSlow : 1;
-        BYTE keys_specialCtrlUp : 1;
-        BYTE keys_specialCtrlDown : 1;
-        BYTE keys_specialCtrlLeft : 1;
-        BYTE keys_specialCtrlRight : 1;
-        BYTE keys__unused : 1;
-    };
-    
-    struct SFL_OnFootData
-    {
-        WORD					sLeftRightKeys;
-        WORD					sUpDownKeys;
-        union
-        {
-            WORD				sKeys;
-            struct SFL_SAMPKeys	stSampKeys;
-        };
-        float					fPosition[3];
-        float					fQuaternion[4];
-        BYTE					byteHealth;
-        BYTE					byteArmor;
-        BYTE					byteCurrentWeapon;
-        BYTE					byteSpecialAction;
-        float					fMoveSpeed[3];
-        float					fSurfingOffsets[3];
-        WORD					sSurfingVehicleID;
-        short					sCurrentAnimationID;
-        short					sAnimFlags;
-    };
-    
-    struct SFL_InCarData
-    {
-        WORD					sVehicleID;
-        WORD					sLeftRightKeys;
-        WORD					sUpDownKeys;
-        union
-        {
-            WORD				sKeys;
-            struct SFL_SAMPKeys	stSampKeys;
-        };
-        float					fQuaternion[4];
-        float					fPosition[3];
-        float					fMoveSpeed[3];
-        float					fVehicleHealth;
-        BYTE					bytePlayerHealth;
-        BYTE					byteArmor;
-        BYTE					byteCurrentWeapon;
-        BYTE					byteSiren;
-        BYTE					byteLandingGearState;
-        WORD					sTrailerID;
-        union
-        {
-            WORD				HydraThrustAngle[2];	//nearly same value
-            float				fTrainSpeed;
+                unsigned char m_bLeftShoulder2 : 1; // look left
+                unsigned char m_bShockButtonR : 1;  // look behind
+                unsigned char m_bPedWalk : 1;       // walking
+                unsigned char m_bRightStickDown : 1;
+                unsigned char m_bRightStickUp : 1;
+                unsigned char m_bRightStickRight : 1; // num 4
+                unsigned char m_bRightStickLeft : 1;  // num 6
+                                                      // 16th bit is unused
+            };
+            short m_value;
         };
     };
-    
-    struct SFL_AimData
-    {
-        BYTE					byteCamMode;
-        float					vecAimf1[3];
-        float					vecAimPos[3];
-        float					fAimZ;
-        BYTE					byteCamExtZoom : 6;		// 0-63 normalized
-        BYTE					byteWeaponState : 2;	// see eWeaponState
-        BYTE					bUnk;
-    };
-    
-    struct SFL_TrailerData
-    {
-        WORD					sTrailerID;
-        float					fPosition[3];
-        float					fQuaternion[4];
-        float					fSpeed[3];
-        float					fSpin[3];
-    };
-    
-    struct SFL_PassengerData
-    {
-        WORD					sVehicleID;
-        BYTE					byteSeatID;
-        BYTE					byteCurrentWeapon;
-        BYTE					byteHealth;
-        BYTE					byteArmor;
-        WORD					sLeftRightKeys;
-        WORD					sUpDownKeys;
-        union
-        {
-            WORD				sKeys;
-            struct SFL_SAMPKeys	stSampKeys;
-        };
-        float					fPosition[3];
-    };
-    
-    struct SFL_DamageData
-    {
-        WORD					sVehicleID_lastDamageProcessed;
-        int						iBumperDamage;
-        int						iDoorDamage;
-        BYTE					byteLightDamage;
-        BYTE					byteWheelDamage;
-    };
-    
-    struct SFL_SurfData
-    {
-        int						iIsSurfing;
-        float					fSurfPosition[3];
-        int						iUnk0;
-        WORD					sSurfingVehicleID;
-        DWORD					ulSurfTick;
-        struct SFL_SAMPVehicle	*pSurfingVehicle;
-        int						iUnk1;
-        int						iSurfMode;	//0 = not surfing, 1 = moving (unstable surf), 2 = fixed on vehicle
-    };
-    
-    struct SFL_UnoccupiedData
-    {
-        int16_t					sVehicleID;
-        BYTE					byteSeatID;
-        float					fRoll[3];
-        float					fDirection[3];
-        float					fPosition[3];
-        float					fMoveSpeed[3];
-        float					fTurnSpeed[3];
-        float					fHealth;
-    };
-    
-    struct SFL_BulletData
-    {
-        BYTE					byteType;
-        WORD					sTargetID;
-        float					fOrigin[3];
-        float					fTarget[3];
-        float					fCenter[3];
-        BYTE					byteWeaponID;
-    };
-    
-    struct SFL_SpectatorData
-    {
-        WORD					sLeftRightKeys;
-        WORD					sUpDownKeys;
-        union
-        {
-            WORD				sKeys;
-            struct SFL_SAMPKeys	stSampKeys;
-        };
-        float					fPosition[3];
-    };
-    
-    struct SFL_StatsData
-    {
-        int						iMoney;
-        int						iAmmo;
-    };
-    
-    struct SFL_HeadSync
-    {
-        float					fHeadSync[3];
-        int						iHeadSyncUpdateTick;
-        int						iHeadSyncLookTick;
-    };
-    
-    // Animation.h
+
+    // Animation
     struct SFL_Animation {
         union {
             struct {
@@ -520,110 +355,277 @@ ffi.cdef[[
         };
     };
     
-
-    struct SFL_LocalPlayer
+    // Synchronization
+    struct SFL_OnfootData
     {
-        SFL_Ped *m_pPed;
-        WORD					sCurrentAnimID;
-        WORD					sAnimFlags;
-        DWORD					ulUnk0;
-        int						iIsActive;
-        int						iIsWasted;
-        WORD					sCurrentVehicleID;
-        WORD					sLastVehicleID;
-        struct SFL_OnFootData		onFootData;
-        struct SFL_PassengerData	passengerData;
-        struct SFL_TrailerData	trailerData;
-        struct SFL_InCarData		inCarData;
-        struct SFL_AimData		aimData;
-        BYTE					byteTeamID;
-        int						iSpawnSkin;
-        BYTE					byteUnk1;
-        float					fSpawnPos[3];
-        float					fSpawnRot;
-        int						iSpawnWeapon[3];
-        int						iSpawnAmmo[3];
-        int						iIsActorAlive;
-        int						iSpawnClassLoaded;
-        DWORD					ulSpawnSelectionTick;
-        DWORD					ulSpawnSelectionStart;
-        int						iIsSpectating;
-        BYTE					byteTeamID2;
-        WORD					usUnk2;
-        DWORD					ulSendTick;
-        DWORD					ulSpectateTick;
-        DWORD					ulAimTick;
-        DWORD					ulStatsUpdateTick;
-        DWORD					ulWeapUpdateTick;
-        WORD					sAimingAtPid;
-        WORD					usUnk3;
-        BYTE					byteCurrentWeapon;
-        BYTE					byteWeaponInventory[13];
-        int						iWeaponAmmo[13];
-        int						iPassengerDriveBy;
-        BYTE					byteCurrentInterior;
-        int						iIsInRCVehicle;
-        WORD					sTargetObjectID;
-        WORD					sTargetVehicleID;
-        WORD					sTargetPlayerID;
-        struct SFL_HeadSync		headSyncData;
-        DWORD					ulHeadSyncTick;
-        BYTE					byteSpace3[260];
-        struct SFL_SurfData		surfData;
-        int						iClassSelectionOnDeath;
-        int						iSpawnClassID;
-        int						iRequestToSpawn;
-        int						iIsInSpawnScreen;
-        DWORD					ulUnk4;
-        BYTE					byteSpectateMode;		// 3 = vehicle, 4 = player, side = 14, fixed = 15
-        BYTE					byteSpectateType;		// 0 = none, 1 = player, 2 = vehicle
-        int						iSpectateID;
-        int						iInitiatedSpectating;
-        struct SFL_DamageData		vehicleDamageData;
+        SFL_ControllerState m_controllerState;
+        CVector             m_position;
+        float               m_fQuaternion[4];
+        unsigned char       m_nHealth;
+        unsigned char       m_nArmor;
+        unsigned char       m_nCurrentWeapon;
+        unsigned char       m_nSpecialAction;
+        CVector             m_speed;
+        CVector             m_surfingOffset;
+        ID                  m_nSurfingVehicleId;
+        SFL_Animation       m_animation;
     };
     
+    struct SFL_IncarData
+    {
+        ID                  m_nVehicle;
+        SFL_ControllerState m_controllerState;
+        float               m_fQuaternion[4];
+        CVector             m_position;
+        CVector             m_speed;
+        float               m_fHealth;
+        unsigned char       m_nDriverHealth;
+        unsigned char       m_nDriverArmor;
+        unsigned char       m_nCurrentWeapon;
+        bool                m_bSirenEnabled;
+        bool                m_bLandingGear;
+        ID                  m_nTrailerId;
+        union {
+            unsigned short m_aHydraThrustAngle[2];
+            float          m_fTrainSpeed;
+        };
+    };
+    
+    struct SFL_AimData
+    {
+        unsigned char m_nCameraMode;
+        CVector       m_aimf1;
+        CVector       m_aimPos;
+        float         m_fAimZ;
+        unsigned char m_nCameraExtZoom : 6;
+        unsigned char m_nWeaponState : 2;
+        char          m_nAspectRatio;
+    };
+    
+    struct SFL_TrailerData
+    {
+        ID      m_nId;
+        CVector m_position;
+        float   m_fQuaternion[4];
+        CVector m_speed;
+        CVector m_turnSpeed;
+    };
+    
+    struct SFL_PassengerData
+    {
+        ID                  m_nVehicleId;
+        unsigned char       m_nSeatId; // flags
+        unsigned char       m_nCurrentWeapon;
+        unsigned char       m_nHealth;
+        unsigned char       m_nArmor;
+        SFL_ControllerState m_controllerState;
+        CVector             m_position;
+    };
+    
+    struct SFL_UnoccupiedData
+    {
+        ID            m_nVehicleId;
+        unsigned char m_nSeatId;
+        CVector       m_roll;
+        CVector       m_direction;
+        CVector       m_position;
+        CVector       m_speed;
+        CVector       m_turnSpeed;
+        float         m_fHealth;
+    };
+    
+    struct SFL_BulletData
+    {
+        unsigned char m_nTargetType;
+        ID            m_nTargetId;
+        CVector       m_origin;
+        CVector       m_target;
+        CVector       m_center;
+        unsigned char m_nWeapon;
+    };
+    
+    struct SFL_SpectatorData
+    {
+        SFL_ControllerState m_controllerState;
+        CVector             m_position;
+    };
+    
+    struct SFL_StatsData
+    {
+        int m_nMoney;
+        int m_nDrunkLevel;
+    };
+
+    // CLocalPlayer
+    struct SFL_LocalPlayer
+    {
+        SFL_Ped      *m_pPed;
+        SFL_Animation m_animation;
+        int           field_8;
+        BOOL          m_bIsActive;
+        BOOL          m_bIsWasted;
+        ID            m_nCurrentVehicle;
+        ID            m_nLastVehicle;
+
+        SFL_OnfootData    m_onfootData;
+        SFL_PassengerData m_passengerData;
+        SFL_TrailerData   m_trailerData;
+        SFL_IncarData     m_incarData;
+        SFL_AimData       m_aimData;
+
+        // used by RPC_SetSpawnInfo
+        struct {
+            NUMBER  m_nTeam;
+            int     m_nSkin;
+            char    field_c;
+            CVector m_position;
+            float   m_fRotation;
+            int     m_aWeapon[3];
+            int     m_aAmmo[3];
+        } m_spawnInfo;
+
+        BOOL   m_bHasSpawnInfo;
+        BOOL   m_bClearedToSpawn;
+        TICK   m_lastSelectionTick;
+        TICK   m_initialSelectionTick;
+        BOOL   m_bDoesSpectating;
+        NUMBER m_nTeam;
+        short  field_14b;
+        TICK   m_lastUpdate;
+        TICK   m_lastSpecUpdate;
+        TICK   m_lastAimUpdate;
+        TICK   m_lastStatsUpdate;
+        TICK   m_lastWeaponsUpdate;
+
+        struct {
+            ID     m_nAimedPlayer;
+            ID     m_nAimedActor;
+            NUMBER m_nCurrentWeapon;
+            NUMBER m_aLastWeapon[13];
+            int    m_aLastWeaponAmmo[13];
+        } m_weaponsData;
+
+        BOOL m_bPassengerDriveBy;
+        char m_nCurrentInterior;
+        BOOL m_bInRCMode;
+
+        struct {
+            ID m_nObject;
+            ID m_nVehicle;
+            ID m_nPlayer;
+            ID m_nActor;
+        } m_cameraTarget;
+
+        struct {
+            CVector m_direction;
+            TICK    m_lastUpdate;
+            TICK    m_lastLook;
+        } m_head;
+
+        TICK m_lastHeadUpdate;
+        TICK m_lastAnyUpdate;
+        char m_szName[256];
+
+        struct {
+            BOOL    m_bIsActive;
+            CVector m_position;
+            int     field_10;
+            ID      m_nEntityId;
+            TICK    m_lastUpdate;
+    
+            union {
+                SFL_Vehicle *m_pVehicle;
+                SFL_Object  *m_pObject;
+            };
+    
+            BOOL m_bStuck;
+            int  m_nMode;
+        } m_surfing;   
+        
+        struct {
+            BOOL m_bEnableAfterDeath;
+            int  m_nSelected;
+            BOOL m_bWaitingForSpawnRequestReply;
+            BOOL m_bIsActive;
+        } m_classSelection;
+    
+        TICK m_zoneDisplayingEnd;
+    
+        struct {
+            char m_nMode;
+            char m_nType;
+            int  m_nObject; // id
+            BOOL m_bProcessed;
+        } m_spectating;
+    
+        struct {
+            ID   m_nVehicleUpdating;
+            int  m_nBumper;
+            int  m_nDoor;
+            char m_bLight;
+            char m_bWheel;
+        } m_damage;
+    };
+    
+    // CRemotePlayer
     struct SFL_RemotePlayer
     {
-        struct SFL_Ped		*pSAMP_Actor;
-        struct SFL_SAMPVehicle	*pSAMP_Vehicle;
-        BYTE					byteTeamID;
-        BYTE					bytePlayerState;
-        BYTE					byteSeatID;
-        DWORD					ulUnk3;
-        int						iPassengerDriveBy;
-        void					*pUnk0;
-        BYTE					byteUnk1[60];
-        float					fSomething[3];
-        float					fVehicleRoll[4];
-        DWORD					ulUnk2[3];
-        float					fOnFootPos[3];
-        float					fOnFootMoveSpeed[3];
-        float					fVehiclePosition[3];
-        float					fVehicleMoveSpeed[3];
-        WORD					sPlayerID;
-        WORD					sVehicleID;
-        DWORD					ulUnk5;
-        int						iShowNameTag;
-        int						iHasJetPack;
-        BYTE					byteSpecialAction;
-        DWORD					ulUnk4[3];
-        struct SFL_OnFootData	onFootData;
-        struct SFL_InCarData	inCarData;
-        struct SFL_TrailerData	trailerData;
-        struct SFL_PassengerData	passengerData;
-        struct SFL_AimData		aimData;
-        float					fActorArmor;
-        float					fActorHealth;
-        DWORD					ulUnk10;
-        BYTE					byteUnk9;
-        DWORD					dwTick;
-        DWORD					dwLastStreamedInTick;	// is 0 when currently streamed in
-        DWORD					ulUnk7;
-        int						iAFKState;
-        struct SFL_HeadSync		headSyncData;
-        int						iGlobalMarkerLoaded;
-        int						iGlobalMarkerLocation[3];
-        DWORD					ulGlobalMarker_GTAID;
+        SFL_Ped     *m_pPed;
+        SFL_Vehicle *m_pVehicle;
+        NUMBER       m_nTeam;
+        NUMBER       m_nState;
+        NUMBER       m_nSeatId;
+        int          field_b;
+        BOOL         m_bPassengerDriveBy;
+        char         pad_13[64];
+        CVector      m_positionDifference; // target pos - current pos
+    
+        struct {
+            float   real;
+            CVector imag;
+        } m_incarTargetRotation;
+    
+        int     pad_6f[3];
+        CVector m_onfootTargetPosition;
+        CVector m_onfootTargetSpeed;
+        CVector m_incarTargetPosition;
+        CVector m_incarTargetSpeed;
+        ID      m_nId;
+        ID      m_nVehicleId;
+        int     field_af;
+        BOOL    m_bDrawLabels;
+        BOOL    m_bHasJetPack;
+        NUMBER  m_nSpecialAction;
+        int     pad_bc[3];
+    
+        SFL_OnfootData    m_onfootData;
+        SFL_IncarData     m_incarData;
+        SFL_TrailerData   m_trailerData;
+        SFL_PassengerData m_passengerData;
+        SFL_AimData       m_aimData;
+    
+        float         m_fReportedArmour;
+        float         m_fReportedHealth;
+        SFL_Animation m_animation;
+        NUMBER        m_nUpdateType;
+        TICK          m_lastUpdate;
+        TICK          m_lastTimestamp;
+        BOOL          m_bPerformingCustomAnimation;
+        int           m_nStatus;
+    
+        struct {
+            CVector m_direction;
+            TICK    m_lastUpdate;
+            TICK    m_lastLook;
+        } m_head;
+    
+        BOOL m_bMarkerState;
+    
+        struct {
+            int x, y, z;
+        } m_markerPosition;
+    
+        GTAREF m_marker;
     };
     
     // CPlayerInfo
@@ -690,216 +692,265 @@ ffi.cdef[[
         BOOL   m_bIsUrinating;
         char   pad[55];
     };
+
+    // CVehiclePool
+    struct SFL_VehicleInfo {
+        ID      m_nId;
+        int     m_nType;
+        CVector m_position;
+        float   m_fRotation;
+        NUMBER  m_nPrimaryColor;
+        NUMBER  m_nSecondaryColor;
+        float   m_fHealth;
+        char    m_nInterior;
+        int     m_nDoorDamageStatus;
+        int     m_nPanelDamageStatus;
+        char    m_nLightDamageStatus;
+        bool    m_bDoorsLocked;
+        bool    m_bHasSiren;
+    };
     
     struct SFL_VehiclePool
     {
-        int						iVehicleCount;
-        void					*pUnk0;
-        BYTE					byteSpace1[0x112C];
-        struct SFL_SAMPVehicle	*pSAMP_Vehicle[SAMP_MAX_VEHICLES];
-        int						iIsListed[SAMP_MAX_VEHICLES];
-        struct SFL_SAMPVehicle	*pGTA_Vehicle[SAMP_MAX_VEHICLES];
-        BYTE					byteSpace2[SAMP_MAX_VEHICLES * 6];
-        DWORD					ulShit[SAMP_MAX_VEHICLES];
-        int						iIsListed2[SAMP_MAX_VEHICLES];
-        DWORD					byteSpace3[SAMP_MAX_VEHICLES * 2];
-        float					fSpawnPos[SAMP_MAX_VEHICLES][3];
-        int						iInitiated;
+        int m_nCount;
+
+        // vehicles that will be created after loading the model
+        struct {
+            SFL_VehicleInfo m_entry[WAITING_LIST_SIZE];
+            BOOL            m_bNotEmpty[WAITING_LIST_SIZE];
+        } m_waiting;
+
+        SFL_Vehicle     *m_pObject[MAX_VEHICLES];
+        BOOL             m_bNotEmpty[MAX_VEHICLES];
+        struct CVehicle *m_pGameObject[MAX_VEHICLES];
+        int              pad_6ef4[MAX_VEHICLES];
+        ID               m_nLastUndrivenId[MAX_VEHICLES]; // a player who send unoccupied sync data
+        TICK             m_lastUndrivenProcessTick[MAX_VEHICLES];
+        BOOL             m_bIsActive[MAX_VEHICLES];
+        BOOL             m_bIsDestroyed[MAX_VEHICLES];
+        TICK             m_tickWhenDestroyed[MAX_VEHICLES];
+        CVector          m_spawnedAt[MAX_VEHICLES];
+        BOOL             m_bNeedsToInitializeLicensePlates;
     };
     
-    struct SFL_SAMPVehicle
+    // CVehicle
+    struct SFL_Vehicle
     {
-        SFL_Entity			vehicle_info;
-        DWORD					bUnk0;
-        struct vehicle_info		*pGTA_Vehicle;
-        BYTE					byteUnk1[8];
-        int						bIsMotorOn;
-        int						iIsLightsOn;
-        int						iIsLocked;
-        BYTE					byteIsObjective;
-        int						iObjectiveBlipCreated;
-        BYTE					byteUnk2[16];
-        BYTE					byteColor[2];
-        int						iColorSync;
-        int						iColor_something;
+        SFL_Entity       entity;
+        SFL_Vehicle     *m_pTrailer;
+        struct CVehicle *m_pGameVehicle;
+        char             pad_50[8];
+        BOOL             m_bIsInvulnerable;
+        BOOL             m_bIsLightsOn;
+        BOOL             m_bIsLocked;
+        bool             m_bIsObjective;
+        BOOL             m_bObjectiveBlipCreated;
+        TICK             m_timeSinceLastDriven;
+        BOOL             m_bHasBeenDriven;
+        char             pad_71[4];
+        BOOL             m_bEngineState;
+        NUMBER           m_nPrimaryColor;
+        NUMBER           m_nSecondaryColor;
+        BOOL             m_bNeedsToUpdateColor;
+        BOOL             m_bUnoccupiedSync;
+        BOOL             m_bRemoteUnocSync;
+        BOOL             m_bKeepModelLoaded;
+        int              m_bHasSiren;
+        void            *m_pLicensePlate;
+        char             m_szLicensePlateText[LICENSE_PLATE_TEXT_LEN + 1];
+        GTAREF           m_marker;
     };
     
+    // CObject
+    struct SFL_MaterialText {
+        char     m_nMaterialIndex;
+        char     pad_0[137];
+        char     m_nMaterialSize;
+        char     m_szFont[65];
+        char     m_nFontSize;
+        bool     m_bBold;
+        D3DCOLOR m_fontColor;
+        D3DCOLOR m_backgroundColor;
+        char     m_align;
+    };
+
+    struct SFL_ObjectMaterial {
+        union {
+            struct CSprite2d *m_pSprite[MAX_MATERIALS];
+            struct RwTexture *m_pTextBackground[MAX_MATERIALS];
+        };
+
+        D3DCOLOR m_color[MAX_MATERIALS];
+        char     pad_6[68];
+        int      m_nType[MAX_MATERIALS];
+        BOOL     m_bTextureWasCreated[MAX_MATERIALS];
+
+        SFL_MaterialText m_textInfo[MAX_MATERIALS];
+        char            *m_szText[MAX_MATERIALS];
+        void            *m_pBackgroundTexture[MAX_MATERIALS];
+        void            *m_pTexture[MAX_MATERIALS];
+    };
+
     struct SFL_Object
     {
-        SFL_Entity			object_info;
-        BYTE					byteUnk0[2];
-        DWORD					ulUnk1;
-        int						iModel;
-        WORD					byteUnk2;
-        float					fDrawDistance;
-        float					fUnk;
-        float					fPos[3];
-        BYTE					byteUnk3[68];
-        BYTE					byteUnk4;
-        float					fRot[3];
+        SFL_Entity entity;
+        char       pad_0[6];
+        int        m_nModel;
+        char       pad_1;
+        bool       m_bDontCollideWithCamera;
+        float      m_fDrawDistance;
+        float      field_0;
+        CVector    m_position;
+        float      m_fDistanceToCamera;
+        bool       m_bDrawLast;
+        char       pad_2[64];
+        CVector    m_rotation;
+        char       pad_3[5];
+        ID         m_nAttachedToVehicle;
+        ID         m_nAttachedToObject;
+        CVector    m_attachOffset;
+        CVector    m_attachRotation;
+        char       field_1;
+        CMatrix    m_targetMatrix;
+        char       pad_4[148];
+        char       m_bMoving;
+        float      m_fSpeed;
+        char       pad_5[99];
+
+        SFL_ObjectMaterial m_material;
+
+        BOOL m_bHasCustomMaterial;
+        char pad_9[10];
     };
     
+    // CObjectPool
     struct SFL_ObjectPool
     {
-        int						iObjectCount;
-        int						iIsListed[SAMP_MAX_OBJECTS];
-        struct SFL_Object			*object[SAMP_MAX_OBJECTS];
+        int         m_nLargestId;
+        BOOL        m_bNotEmpty[MAX_OBJECTS];
+        SFL_Object *m_pObject[MAX_OBJECTS];
     };
     
+    // CGangZonePool
     struct SFL_Gangzone
     {
-        float					fPosition[4];
-        DWORD					dwColor;
-        DWORD					dwAltColor;
+        struct {
+            float left;
+            float bottom;
+            float right;
+            float top;
+        } m_rect;
+
+        D3DCOLOR m_color;
+        D3DCOLOR m_altColor;
     };
     
     struct SFL_GangzonePool
     {
-        struct SFL_Gangzone		*pGangzone[SAMP_MAX_GANGZONES];
-        int						iIsListed[SAMP_MAX_GANGZONES];
+        SFL_Gangzone *m_pObject[MAX_GANGZONES];
+        BOOL          m_bNotEmpty[MAX_GANGZONES];
     };
     
-    struct SFL_TextLabel
+    // CLabelPool
+    struct SFL_TextLabel {
+        char    *m_pText;
+        D3DCOLOR m_color;
+        CVector  m_position;
+        float    m_fDrawDistance;
+        bool     m_bBehindWalls;
+        ID       m_nAttachedToPlayer;
+        ID       m_nAttachedToVehicle;
+    };
+    
+    struct SFL_LabelPool
     {
-        PCHAR					pText;
-        DWORD					color;
-        float					fPosition[3];
-        float					fMaxViewDistance;
-        BYTE					byteShowBehindWalls;
-        WORD					sAttachedToPlayerID;
-        WORD					sAttachedToVehicleID;
+        SFL_TextLabel m_object[MAX_TEXT_LABELS];
+        BOOL          m_bNotEmpty[MAX_TEXT_LABELS];
     };
     
-    struct SFL_TextLabelPool
+    // CChat
+    struct SFL_ChatEntry {
+        __int32  m_timestamp;
+        char     m_szPrefix[28];
+        char     m_szText[144];
+        char     unused[64];
+        int      m_nType;
+        D3DCOLOR m_textColor;
+        D3DCOLOR m_prefixColor;
+    };
+    
+    struct SFL_Chat
     {
-        struct SFL_TextLabel		textLabel[SAMP_MAX_3DTEXTS];
-        int						iIsListed[SAMP_MAX_3DTEXTS];
+        unsigned int m_nPageSize;
+        char        *m_szLastMessage;
+        int          m_nMode;
+        bool         m_bTimestamps;
+        BOOL         m_bDoesLogExist;
+        char         m_szLogPath[261]; // MAX_PATH(+1)
+        void        *m_pGameUi; // CDXUTDialog
+        void        *m_pEditbox; // CDXUTEditBox
+        void        *m_pScrollbar; // CDXUTScrollBar
+        D3DCOLOR     m_textColor;  // 0xFFFFFFFF
+        D3DCOLOR     m_infoColor;  // 0xFF88AA62
+        D3DCOLOR     m_debugColor; // 0xFFA9C4E4
+        long         m_nWindowBottom;
+
+        SFL_ChatEntry m_entry[MAX_MESSAGES];
+        void         *m_pFontRenderer;
+        void         *m_pTextSprite;
+        void         *m_pSprite;
+        void         *m_pDevice;
+        BOOL          m_bRenderToSurface;
+        void         *m_pRenderToSurface;
+        void         *m_pTexture;
+        void         *m_pSurface;
+        unsigned int  m_displayMode[4];
+        int           pad_[2];
+        BOOL          m_bRedraw;
+        long          m_nScrollbarPos;
+        long          m_nCharHeight; // this is the height of the "Y"
+        long          m_nTimestampWidth;
     };
     
-    struct SFL_ChatEntry
-    {
-        DWORD					SystemTime;
-        char					szPrefix[28];
-        char					szText[144];
-        BYTE					unknown[64];
-        int						iType;			// 2 - text + prefix, 4 - text (server msg), 8 - text (debug)
-        DWORD					clTextColor;
-        DWORD					clPrefixColor;	// or textOnly colour
-    };
-    
-    struct SFL_FontRenderer
-    {
-        ID3DXFont				*m_pChatFont;
-        ID3DXFont				*m_pLittleFont;
-        ID3DXFont				*m_pChatShadowFont;
-        ID3DXFont				*m_pLittleShadowFont;
-        ID3DXFont				*m_pCarNumberFont;
-        void 					*m_pTempSprite;
-        void					*m_pD3DDevice;
-        PCHAR					m_pszTextBuffer;
-    };
-    
-    struct SFL_ChatInfo
-    {
-        int						pagesize;
-        PCHAR					pLastMsgText;
-        int						iChatWindowMode;
-        BYTE					bTimestamps;
-        DWORD					m_iLogFileExist;
-        char					logFilePathChatLog[260 + 1];
-        void					*pGameUI; // CDXUTDialog
-        void					*pEditBackground; // CDXUTEditBox
-        void					*pDXUTScrollBar;
-        D3DCOLOR				clTextColor;
-        D3DCOLOR				clInfoColor;
-        D3DCOLOR				clDebugColor;
-        DWORD					m_lChatWindowBottom;
-        struct SFL_ChatEntry	chatEntry[100];
-        SFL_FontRenderer		*m_pFontRenderer;
-        void					*m_pChatTextSprite;
-        void					*m_pSprite;
-        void					*m_pD3DDevice;
-        int						m_iRenderMode; // 0 - Direct Mode (slow), 1 - Normal mode
-        void					*pID3DXRenderToSurface;
-        void					*m_pTexture;
-        void					*pSurface;
-        void					*pD3DDisplayMode;
-        int						iUnk1[3];
-        int						iUnk2; // smth related to drawing in direct mode
-        int						m_iRedraw;
-        int						m_nPrevScrollBarPosition;
-        int						m_iFontSizeY;
-        int						m_iTimestampWidth;
-    };
-    
-    struct SFL_InputBox
-    {
-        void					*pUnknown;
-        BYTE					bIsChatboxOpen;
-        BYTE					bIsMouseInChatbox;
-        BYTE					bMouseClick_related;
-        BYTE					unk;
-        DWORD					dwPosChatInput[2];
-        BYTE					unk2[263];
-        int						iCursorPosition;
-        BYTE					unk3;
-        int						iMarkedText_startPos; // Highlighted text between this and iCursorPosition
-        BYTE					unk4[20];
-        int						iMouseLeftButton;
-    };
-    
+    // CInput
     struct SFL_InputInfo
     {
-        void					*pD3DDevice;
-        void					*pDXUTDialog;
-        SFL_InputBox				*pDXUTEditBox;
-        CMDPROC					pCMDs[SAMP_MAX_CLIENTCMDS];
-        char					szCMDNames[SAMP_MAX_CLIENTCMDS][33];
-        int						iCMDCount;
-        int						iInputEnabled;
-        char					szInputBuffer[129];
-        char					szRecallBufffer[10][129];
-        char					szCurrentBuffer[129];
-        int						iCurrentRecall;
-        int						iTotalRecalls;
-        CMDPROC					pszDefaultCMD;
+        void   *m_pDevice;
+        void   *m_pGameUi;
+        void   *m_pEditbox;
+        CMDPROC m_pCommandProc[MAX_CLIENT_CMDS];
+        char    m_szCommandName[MAX_CLIENT_CMDS][MAX_CMD_LENGTH + 1];
+        int     m_nCommandCount;
+        BOOL    m_bEnabled;
+        char    m_szInput[129];
+        char    m_szRecallBufffer[10][129];
+        char    m_szCurrentBuffer[129];
+        int     m_nCurrentRecall;
+        int     m_nTotalRecall;
+        CMDPROC m_pDefaultCommand;
     };
     
-    struct SFL_KillEntry
+    struct SFL_DeathWindow
     {
-        char					szKiller[25];
-        char					szVictim[25];
-        D3DCOLOR				clKillerColor;
-        D3DCOLOR				clVictimColor;
-        BYTE					byteType;
-    };
-    
-    struct SFL_KillInfo
-    {
-        int						iEnabled;
-        struct SFL_KillEntry	killEntry[5];
-        int 					iLongestNickLength;
-          int 					iOffsetX;
-          int 					iOffsetY;
-        ID3DXFont				*pD3DFont;
-        ID3DXFont				*pWeaponFont1;
-        ID3DXFont				*pWeaponFont2;
-        void					*pSprite;
-        void					*pD3DDevice;
-        int 					iAuxFontInited;
-          ID3DXFont 				*pAuxFont1;
-          ID3DXFont 				*pAuxFont2;
-    };
-    
-    struct SFL_ChatPlayer
-    {
-        int						iCreated;
-        char					probablyTheText[256];
-        DWORD					dwTickCreated;
-        DWORD					dwLiveLength;
-        DWORD					dwColor;
-        float					fDrawDistance;
-        DWORD					dwUnknown;
+        BOOL          m_bEnabled;
+        struct
+        {
+            char     m_szKiller[25];
+            char     m_szVictim[25];
+            D3DCOLOR m_killerColor;
+            D3DCOLOR m_victimColor;
+            char     m_nWeapon;
+        } m_entry[MAX_DEATHMESSAGES];
+        int           m_nLongestNickWidth;
+        int           m_position[2];
+        void         *m_pFont;
+        void         *m_pWeaponFont1;
+        void         *m_pWeaponFont2;
+        void         *m_pSprite;
+        void         *m_pDevice;
+        BOOL          m_bAuxFontInited;
+        void         *m_pAuxFont1;
+        void         *m_pAuxFont2;
     };
     
     struct SFL_Audio
@@ -909,8 +960,8 @@ ffi.cdef[[
     
     struct SFL_Camera
     {
-        SFL_Entity* m_pAttachedTo;
-        CMatrix* m_pMatrix;
+        SFL_Entity *m_pAttachedTo;
+        CMatrix    *m_pMatrix;
     };
     
     // CGame
@@ -947,40 +998,20 @@ ffi.cdef[[
         bool         m_aKeepLoadedVehicleModels[212];
     };
     
-    struct SFL_ScoreboardInfo
+    // CScoreboard
+    struct SFL_Scoreboard
     {
-        int						iIsEnabled;
-        int						iPlayersCount;
-        float					fTextOffset[2];
-        float					fScalar;
-        float					fSize[2];
-        float					fUnk0[5];
-        void					*pDirectDevice;
-        void					*pDialog;
-        void 					*pList;
-        int						iOffset;		// ?
-        int						iIsSorted;		// ?
-    };
-    
-    struct SFL_ActorPool
-    {
-        int     m_nLargestId;
-        SFL_Entity			*pActor[SAMP_MAX_ACTORS]; // ?
-        int						iIsListed[SAMP_MAX_ACTORS];
-        struct SFL_Ped		*pGTAPed[SAMP_MAX_ACTORS];
-        DWORD					ulUnk0[SAMP_MAX_ACTORS];
-        DWORD					ulUnk1[SAMP_MAX_ACTORS];
-    };
-    
-    struct SFL_ChatBubbleInfo
-    {
-        struct SFL_ChatPlayer	chatBubble[MAX_PLAYERS];
-    };
-    
-    struct SFL_StreamedOutPlayerInfo
-    {
-        bool					iIsListed[MAX_PLAYERS];
-        float					fPlayerPos[MAX_PLAYERS][3];
+        BOOL  m_bIsEnabled;
+        int   m_nPlayerCount;
+        float m_position[2];
+        float _fScalar;
+        float m_size[2];
+        float pad[5];
+        void *m_pDevice;
+        void *m_pDialog;
+        void *m_pListBox;
+        int   m_nCurrentOffset;
+        BOOL  m_bIsSorted;
     };
 
     struct SFL_RakClientInterface_vtbl {
