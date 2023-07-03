@@ -11,25 +11,40 @@ local ffi = shared.ffi
 require 'sflua.cdef.dxut'
 local input = sampapi.require('CInput', true)
 
+local registered_cmds = {}
+
 function sampGetInputInfoPtr()
     return shared.get_pointer(dialog.RefInputBox())
 end
 
 function sampRegisterChatCommand(cmd, func)
-    sampUnregisterChatCommand(cmd)
+    if input.RefInputBox():GetCommandHandler(cmd) ~= nil then
+        print(('WARNING: The "%s" command is already registered.'):format(cmd))
+        return
+    end
+
     jit.off(func, true)
     local cb = ffi.cast('CMDPROC', function(args) func(ffi.string(args)) end)
     input.RefInputBox():AddCommand(cmd, cb)
+    registered_cmds[cmd] = true
     return true
 end
 
 function sampUnregisterChatCommand(cmd)
     local ref = input.RefInputBox()
-    for i = 0, ffi.C.MAX_CLIENT_CMDS - 1 do
+    for i = 0, ref.m_nCommandCount - 1 do
         if ffi.string(ref.m_szCommandName[i]) == cmd then
-            ffi.fill(ref.m_szCommandName[i], ffi.sizeof(ref.m_szCommandName[i]), 0)
-            ref.m_commandProc[i] = nil
+            local needs = ref.m_nCommandCount - i - 1
+            local clear = i
+            if needs > 0 then
+                ffi.copy(ref.m_szCommandName[i], ref.m_szCommandName[i + 1], ffi.sizeof(ref.m_szCommandName[i]) * needs)
+                ffi.copy(ref.m_commandProc + i, ref.m_commandProc + i + 1, ffi.sizeof(ref.m_commandProc[i]) * needs)
+                clear = i + needs
+            end
+            ffi.fill(ref.m_szCommandName[clear], ffi.sizeof(ref.m_szCommandName[clear]), 0)
+            ref.m_commandProc[clear] = nil
             ref.m_nCommandCount = ref.m_nCommandCount - 1
+            registered_cmds[cmd] = nil
             return true
         end
     end
@@ -70,3 +85,12 @@ function sampProcessChatInput(text)
     sampSetChatInputText(text)
     input.RefInputBox():ProcessInput()
 end
+
+-- unregister commands when unloading the script
+addEventHandler('onScriptTerminate', function (s, quitGame)
+    if s == script.this then
+        for i in pairs(registered_cmds) do
+            sampUnregisterChatCommand(i)
+        end
+    end
+end)
