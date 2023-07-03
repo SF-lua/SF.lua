@@ -4,6 +4,7 @@
     Author: imring
 ]]
 
+local ffi = require 'ffi'
 local sampapi = require 'sampapi'
 local netgame = sampapi.require('CNetGame', true)
 
