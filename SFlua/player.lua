@@ -25,6 +25,7 @@ function sampIsPlayerConnected(id)
 end
 
 function sampGetPlayerNickname(id)
+    netgame.RefNetGame():UpdatePlayers()
     return ffi.string(playerpool():GetName(id))
 end
 
@@ -48,6 +49,7 @@ function sampIsPlayerNpc(id)
 end
 
 function sampGetPlayerScore(id)
+    netgame.RefNetGame():UpdatePlayers()
     if id == sampGetLocalPlayerId() then
         return playerpool():GetLocalPlayerScore()
     end
@@ -55,6 +57,7 @@ function sampGetPlayerScore(id)
 end
 
 function sampGetPlayerPing(id)
+    netgame.RefNetGame():UpdatePlayers()
     if id == sampGetLocalPlayerId() then
         return playerpool():GetLocalPlayerPing()
     end
@@ -93,7 +96,7 @@ function sampGetPlayerIdByCharHandle(handle)
     end
     for i = 0, ffi.C.MAX_PLAYERS - 1 do
         local res, pped = sampGetCharHandleBySampPlayerId(i)
-        if res and pped == ped then return true, i end
+        if res and pped == handle then return true, i end
     end
     return false, -1
 end
@@ -341,11 +344,14 @@ function sampIsPlayerDefined(id)
         return localplayer ~= nil
     end
 
+    if not sampIsPlayerConnected(id) then
+        return false
+    end
     local remoteplayer = playerpool():GetPlayer(id)
     if remoteplayer == nil then
         return false
     end
-    return remoteplayer:DoesExist()
+    return remoteplayer:DoesExist() ~= 0
 end
 
 function sampGetLocalPlayerNickname()
