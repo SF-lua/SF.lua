@@ -18,7 +18,7 @@ function sampGetVersion()
 end
 
 function isSampLoaded()
-    return sampapi.GetBase() == 0
+    return sampapi.GetBase() ~= 0
 end
 
 function isSampfuncsLuaLoaded()

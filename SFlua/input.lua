@@ -12,19 +12,19 @@ require 'sflua.cdef.dxut'
 local input = sampapi.require('CInput', true)
 
 function sampGetInputInfoPtr()
-    return shared.get_pointer(dialog.RefInput())
+    return shared.get_pointer(dialog.RefInputBox())
 end
 
 function sampRegisterChatCommand(cmd, func)
     sampUnregisterChatCommand(cmd)
+    jit.off(func, true)
     local cb = ffi.cast('CMDPROC', function(args) func(ffi.string(args)) end)
-    jit.off(cb, true)
-    input.RefInput():AddCommand(cmd, cb)
+    input.RefInputBox():AddCommand(cmd, cb)
     return true
 end
 
 function sampUnregisterChatCommand(cmd)
-    local ref = input.RefInput()
+    local ref = input.RefInputBox()
     for i = 0, ffi.C.MAX_CLIENT_CMDS - 1 do
         if ffi.string(ref.m_szCommandName[i]) == cmd then
             ffi.fill(ref.m_szCommandName[i], ffi.sizeof(ref.m_szCommandName[i]), 0)
@@ -37,27 +37,27 @@ function sampUnregisterChatCommand(cmd)
 end
 
 function sampSetChatInputText(text)
-    input.RefInput().m_pEditbox:SetText(text)
+    input.RefInputBox().m_pEditbox:SetText(text)
 end
 
 function sampGetChatInputText()
-    return input.RefInput().m_pEditbox:GetText()
+    return input.RefInputBox().m_pEditbox:GetText()
 end
 
 function sampSetChatInputEnabled(enabled)
     if enabled then
-        input.RefInput():Open()
+        input.RefInputBox():Open()
     else
-        input.RefInput():Close()
+        input.RefInputBox():Close()
     end
 end
 
 function sampIsChatInputActive()
-    return input.RefInput().m_bEnabled == 1
+    return input.RefInputBox().m_bEnabled == 1
 end
 
 function sampIsChatCommandDefined(cmd)
-    local ref = input.RefInput()
+    local ref = input.RefInputBox()
     for i = 0, ffi.C.MAX_CLIENT_CMDS - 1 do
         if ffi.string(ref.m_szCommandName[i]) == cmd then
             return true
@@ -68,5 +68,5 @@ end
 
 function sampProcessChatInput(text)
     sampSetChatInputText(text)
-    input.RefInput():ProcessInput()
+    input.RefInputBox():ProcessInput()
 end
