@@ -84,8 +84,10 @@ function sampGetCharHandleBySampPlayerId(id)
         return true, PLAYER_PED
     elseif sampIsPlayerDefined(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        local ped = remoteplayer.m_pPed.m_pGamePed
-        return true, getCharPointerHandle(shared.get_pointer(ped))
+        if remoteplayer ~= nil then
+            local ped = remoteplayer.m_pPed.m_pGamePed
+            return true, getCharPointerHandle(shared.get_pointer(ped))
+        end
     end
     return false, -1
 end
@@ -106,7 +108,9 @@ function sampGetPlayerArmor(id)
         return getCharArmour(PLAYER_PED)
     elseif sampIsPlayerDefined(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer.m_fReportedArmour
+        if remoteplayer ~= nil then
+            return remoteplayer.m_fReportedArmour
+        end
     end
     return 0
 end
@@ -116,7 +120,9 @@ function sampGetPlayerHealth(id)
         return getCharHealth(PLAYER_PED)
     elseif sampIsPlayerDefined(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer.m_fReportedHealth
+        if remoteplayer ~= nil then
+            return remoteplayer.m_fReportedHealth
+        end
     end
     return 0
 end
@@ -127,7 +133,9 @@ function sampIsPlayerPaused(id)
         return false
     elseif sampIsPlayerConnected(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer.m_nStatus == ffi.C.PLAYER_STATE_NONE
+        if remoteplayer ~= nil then
+            return remoteplayer.m_nStatus == ffi.C.PLAYER_STATE_NONE
+        end
     end
 end
 
@@ -174,7 +182,9 @@ function sampGetPlayerSpecialAction(id)
         return localplayer:GetSpecialAction()
     elseif sampIsPlayerDefined(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer.m_nSpecialAction
+        if remoteplayer ~= nil then
+            return remoteplayer.m_nSpecialAction
+        end
     end
     return -1
 end
@@ -255,7 +265,9 @@ function sampGetPlayerAnimationId(id)
         return localplayer.m_animation.m_value
     elseif sampIsPlayerDefined(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer.m_animation.m_value
+        if remoteplayer ~= nil then
+            return remoteplayer.m_animation.m_value
+        end
     end
     return -1
 end
@@ -294,10 +306,12 @@ end
 function sampGetPlayerColor(id)
     if id == sampGetLocalPlayerId() then
         local localplayer = playerpool():GetLocalPlayer()
-        return localplayer:GetColorAsRGBA()
+        return localplayer:GetColorAsARGB()
     elseif sampIsPlayerConnected(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer:GetColorAsRGBA()
+        if remoteplayer ~= nil then
+            return remoteplayer:GetColorAsARGB()
+        end
     end
     return 0
 end
@@ -368,6 +382,8 @@ function sampSetPlayerColor(id, color)
         return localplayer:SetColor(color)
     elseif sampIsPlayerConnected(id) then
         local remoteplayer = playerpool():GetPlayer(id)
-        return remoteplayer:SetColor(color)
+        if remoteplayer ~= nil then
+            return remoteplayer:SetColor(color)
+        end
     end
 end
