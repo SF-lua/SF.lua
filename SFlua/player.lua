@@ -19,21 +19,28 @@ end
 function sampGetPlayerPoolPtr()
     return shared.get_pointer(playerpool())
 end
+jit.off(sampGetPlayerPoolPtr, true)
 
 function sampIsPlayerConnected(id)
     return playerpool():IsConnected(id)
 end
+jit.off(sampIsPlayerConnected, true)
 
 function sampGetPlayerNickname(id)
+    if not sampIsPlayerConnected(id) then
+        return ''
+    end
     netgame.RefNetGame():UpdatePlayers()
     return ffi.string(playerpool():GetName(id))
 end
+jit.off(sampGetPlayerNickname, true)
 
 function sampSpawnPlayer()
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:RequestSpawn()
     localplayer:Spawn()
 end
+jit.off(sampSpawnPlayer, true)
 
 function sampSendChat(text)
     if text:byte(1) == 47 then -- character "/"
@@ -43,41 +50,54 @@ function sampSendChat(text)
         playerpool():GetLocalPlayer():Chat(text)
     end
 end
+jit.off(sampSendChat, true)
 
 function sampIsPlayerNpc(id)
     return sampIsPlayerConnected(id) and playerpool().m_pObject[id].m_bIsNPC == 1
 end
+jit.off(sampIsPlayerNpc, true)
 
 function sampGetPlayerScore(id)
+    if not sampIsPlayerConnected(id) then
+        return 0
+    end
     netgame.RefNetGame():UpdatePlayers()
     if id == sampGetLocalPlayerId() then
         return playerpool():GetLocalPlayerScore()
     end
     return playerpool():GetScore(id)
 end
+jit.off(sampGetPlayerScore, true)
 
 function sampGetPlayerPing(id)
+    if not sampIsPlayerConnected(id) then
+        return 0
+    end
     netgame.RefNetGame():UpdatePlayers()
     if id == sampGetLocalPlayerId() then
         return playerpool():GetLocalPlayerPing()
     end
     return playerpool():GetPing(id)
 end
+jit.off(sampGetPlayerPing, true)
 
 function sampRequestClass(class)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:RequestClass(class)
 end
+jit.off(sampRequestClass, true)
 
 function sampSendInteriorChange(id)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:ChangeInterior(id)
 end
+jit.off(sampSendInteriorChange, true)
 
 function sampForceUnoccupiedSyncSeatId(id, seat)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:SendUnoccupiedData(id, seat)
 end
+jit.off(sampForceUnoccupiedSyncSeatId, true)
 
 function sampGetCharHandleBySampPlayerId(id)
     if id == sampGetLocalPlayerId() then
@@ -91,6 +111,7 @@ function sampGetCharHandleBySampPlayerId(id)
     end
     return false, -1
 end
+jit.off(sampGetCharHandleBySampPlayerId, true)
 
 function sampGetPlayerIdByCharHandle(handle)
     if handle == PLAYER_PED then
@@ -102,6 +123,7 @@ function sampGetPlayerIdByCharHandle(handle)
     end
     return false, -1
 end
+jit.off(sampGetPlayerIdByCharHandle, true)
 
 function sampGetPlayerArmor(id)
     if id == sampGetLocalPlayerId() then
@@ -114,6 +136,7 @@ function sampGetPlayerArmor(id)
     end
     return 0
 end
+jit.off(sampGetPlayerArmor, true)
 
 function sampGetPlayerHealth(id)
     if id == sampGetLocalPlayerId() then
@@ -126,6 +149,7 @@ function sampGetPlayerHealth(id)
     end
     return 0
 end
+jit.off(sampGetPlayerHealth, true)
 
 function sampIsPlayerPaused(id)
     if id == sampGetLocalPlayerId() then
@@ -138,11 +162,13 @@ function sampIsPlayerPaused(id)
         end
     end
 end
+jit.off(sampIsPlayerPaused, true)
 
 function sampSetSpecialAction(action)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:SetSpecialAction(action)
 end
+jit.off(sampSetSpecialAction, true)
 
 function sampGetPlayerCount(streamed)
     if not streamed then
@@ -159,6 +185,7 @@ function sampGetPlayerCount(streamed)
     end
     return players
 end
+jit.off(sampGetPlayerCount, true)
 
 function sampGetMaxPlayerId(streamed)
     if not streamed then
@@ -175,6 +202,7 @@ function sampGetMaxPlayerId(streamed)
     end
     return mid
 end
+jit.off(sampGetMaxPlayerId, true)
 
 function sampGetPlayerSpecialAction(id)
     if id == sampGetLocalPlayerId() then
@@ -188,6 +216,7 @@ function sampGetPlayerSpecialAction(id)
     end
     return -1
 end
+jit.off(sampGetPlayerSpecialAction, true)
 
 function sampStorePlayerOnfootData(id, data)
     local player
@@ -201,6 +230,7 @@ function sampStorePlayerOnfootData(id, data)
         ffi.copy(ffi.cast('void*', data), player.m_onfootData, ffi.sizeof(player.m_onfootData))
     end
 end
+jit.off(sampStorePlayerOnfootData, true)
 
 function sampStorePlayerIncarData(id, data)
     local player
@@ -214,6 +244,7 @@ function sampStorePlayerIncarData(id, data)
         ffi.copy(ffi.cast('void*', data), player.m_incarData, ffi.sizeof(player.m_incarData))
     end
 end
+jit.off(sampStorePlayerIncarData, true)
 
 function sampStorePlayerPassengerData(id, data)
     local player
@@ -227,6 +258,7 @@ function sampStorePlayerPassengerData(id, data)
         ffi.copy(ffi.cast('void*', data), player.m_passengerData, ffi.sizeof(player.m_passengerData))
     end
 end
+jit.off(sampStorePlayerPassengerData, true)
 
 function sampStorePlayerTrailerData(id, data)
     local player
@@ -240,6 +272,7 @@ function sampStorePlayerTrailerData(id, data)
         ffi.copy(ffi.cast('void*', data), player.m_trailerData, ffi.sizeof(player.m_trailerData))
     end
 end
+jit.off(sampStorePlayerTrailerData, true)
 
 function sampStorePlayerAimData(id, data)
     local player
@@ -253,11 +286,13 @@ function sampStorePlayerAimData(id, data)
         ffi.copy(ffi.cast('void*', data), player.m_aimData, ffi.sizeof(player.m_aimData))
     end
 end
+jit.off(sampStorePlayerAimData, true)
 
 function sampSendSpawn()
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:Spawn()
 end
+jit.off(sampSendSpawn, true)
 
 function sampGetPlayerAnimationId(id)
     if id == sampGetLocalPlayerId() then
@@ -271,10 +306,12 @@ function sampGetPlayerAnimationId(id)
     end
     return -1
 end
+jit.off(sampGetPlayerAnimationId, true)
 
 function sampSetLocalPlayerName(name)
     playerpool():SetLocalPlayerName(name)
 end
+jit.off(sampSetLocalPlayerName, true)
 
 function sampGetPlayerStructPtr(id)
     if id == sampGetLocalPlayerId() then
@@ -286,22 +323,26 @@ function sampGetPlayerStructPtr(id)
     end
     return 0
 end
+jit.off(sampGetPlayerStructPtr, true)
 
 function sampSendEnterVehicle(id, passenger)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:EnterVehicle(id, passenger)
 end
+jit.off(sampSendEnterVehicle, true)
 
 function sampSendExitVehicle(id)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer:ExitVehicle(id)
 end
+jit.off(sampSendExitVehicle, true)
 
 function sampIsLocalPlayerSpawned()
     -- TODO: works fine?
     local localplayer = playerpool():GetLocalPlayer()
     return localplayer.m_bClearedToSpawn == 1 and localplayer.m_bHasSpawnInfo == 1 and ( localplayer.m_bIsActive == 1 or isCharDead(PLAYER_PED) )
 end
+jit.off(sampIsLocalPlayerSpawned, true)
 
 function sampGetPlayerColor(id)
     if id == sampGetLocalPlayerId() then
@@ -315,42 +356,49 @@ function sampGetPlayerColor(id)
     end
     return 0
 end
+jit.off(sampGetPlayerColor, true)
 
 function sampForceAimSync()
     local localplayer = playerpool():GetLocalPlayer()
     localplayer.m_lastAnyUpdate = 0 -- lol
     localplayer:SendAimData()
 end
+jit.off(sampForceAimSync, true)
 
 function sampForceOnfootSync()
     local localplayer = playerpool():GetLocalPlayer()
     localplayer.m_lastAnyUpdate = 0
     localplayer:SendOnfootData()
 end
+jit.off(sampForceOnfootSync, true)
 
 function sampForceStatsSync()
     local localplayer = playerpool():GetLocalPlayer()
     localplayer.m_lastAnyUpdate = 0
     localplayer:SendStats()
 end
+jit.off(sampForceStatsSync, true)
 
 function sampForceTrailerSync(id)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer.m_lastAnyUpdate = 0
     localplayer:SendTrailerData(id)
 end
+jit.off(sampForceTrailerSync, true)
 
 function sampForceVehicleSync(id)
     local localplayer = playerpool():GetLocalPlayer()
     localplayer.m_lastAnyUpdate = 0
     localplayer:SendIncarData(id)
 end
+jit.off(sampForceVehicleSync, true)
 
 -- New functions
 
 function sampGetLocalPlayerId()
     return playerpool().m_localInfo.m_nId
 end
+jit.off(sampGetLocalPlayerId, true)
 
 function sampIsPlayerDefined(id)
     if id == sampGetLocalPlayerId() then
@@ -367,6 +415,7 @@ function sampIsPlayerDefined(id)
     end
     return remoteplayer:DoesExist() ~= 0
 end
+jit.off(sampIsPlayerDefined, true)
 
 function sampGetLocalPlayerNickname()
     return sampGetPlayerNickname(sampGetLocalPlayerId())
@@ -387,3 +436,4 @@ function sampSetPlayerColor(id, color)
         end
     end
 end
+jit.off(sampSetPlayerColor, true)

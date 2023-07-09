@@ -29,6 +29,7 @@ end
 function isSampAvailable()
     return isSampLoaded() and netgame.RefNetGame() ~= nil
 end
+jit.off(isSampAvailable, true)
 
 isSampfuncsLoaded = isSampfuncsLuaLoaded
 

@@ -18,6 +18,7 @@ end
 function sampGetVehiclePoolPtr()
     return shared.get_pointer(vehiclepool())
 end
+jit.off(sampGetVehiclePoolPtr, true)
 
 function sampGetCarHandleBySampVehicleId(id)
     if sampIsVehicleDefined(id) then
@@ -25,6 +26,7 @@ function sampGetCarHandleBySampVehicleId(id)
     end
     return false, -1
 end
+jit.off(sampGetCarHandleBySampVehicleId, true)
 
 function sampGetVehicleIdByCarHandle(car)
     for i = 0, ffi.C.MAX_VEHICLES - 1 do
@@ -40,3 +42,4 @@ end
 function sampIsVehicleDefined(id)
     return vehiclepool().m_bNotEmpty[id] == 1 and vehiclepool().m_pObject[id] ~= nil and vehiclepool().m_pGameObject[id] ~= nil
 end
+jit.off(sampIsVehicleDefined, true)

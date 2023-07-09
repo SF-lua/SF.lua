@@ -17,7 +17,9 @@ function sampToggleScoreboard(show)
         scoreboard.RefScoreboard():Close(true)
     end
 end
+jit.off(sampToggleScoreboard, true)
 
 function sampIsScoreboardOpen()
     return scoreboard.RefScoreboard().m_bIsEnabled == 1
 end
+jit.off(sampIsScoreboardOpen, true)

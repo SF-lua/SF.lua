@@ -19,35 +19,41 @@ function raknetBitStreamReadBool(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return bitstream:ReadBit()
 end
+jit.off(raknetBitStreamReadBool, true)
 
 function raknetBitStreamReadBuffer(bitstream, dest, size)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:ReadBits(dest, size * 8, true)
 end
+jit.off(raknetBitStreamReadBuffer, true)
 
 function raknetBitStreamReadInt8(bitstream)
     local buf = ffi.new('char[1]')
     raknetBitStreamReadBuffer(bitstream, buf, ffi.sizeof(buf))
     return buf[0]
 end
+jit.off(raknetBitStreamReadInt8, true)
 
 function raknetBitStreamReadInt16(bitstream)
     local buf = ffi.new('short[1]')
     raknetBitStreamReadBuffer(bitstream, buf, ffi.sizeof(buf))
     return buf[0]
 end
+jit.off(raknetBitStreamReadInt16, true)
 
 function raknetBitStreamReadInt32(bitstream)
     local buf = ffi.new('long [1]')
     raknetBitStreamReadBuffer(bitstream, buf, ffi.sizeof(buf))
     return buf[0]
 end
+jit.off(raknetBitStreamReadInt32, true)
 
 function raknetBitStreamReadFloat(bitstream)
     local buf = ffi.new('float[1]')
     raknetBitStreamReadBuffer(bitstream, buf, ffi.sizeof(buf))
     return buf[0]
 end
+jit.off(raknetBitStreamReadFloat, true)
 
 function raknetBitStreamReadString(bitstream, size)
     local buf = ffi.new('char[?]', size + 1)
@@ -55,112 +61,134 @@ function raknetBitStreamReadString(bitstream, size)
     buf[size] = 0
     return ffi.string(buf)
 end
+jit.off(raknetBitStreamReadString, true)
 
 function raknetBitStreamResetReadPointer(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:ResetReadPointer()
 end
+jit.off(raknetBitStreamResetReadPointer, true)
 
 function raknetBitStreamResetWritePointer(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:ResetWritePointer()
 end
+jit.off(raknetBitStreamResetWritePointer, true)
 
 function raknetBitStreamIgnoreBits(bitstream, amount)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:IgnoreBits(amount)
 end
+jit.off(raknetBitStreamIgnoreBits, true)
 
 function raknetBitStreamSetWriteOffset(bitstream, offset)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:SetWriteOffset(offset)
 end
+jit.off(raknetBitStreamSetWriteOffset, true)
 
 function raknetBitStreamSetReadOffset(bitstream, offset)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream.readOffset = offset
 end
+jit.off(raknetBitStreamSetReadOffset, true)
 
 function raknetBitStreamGetNumberOfBitsUsed(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return bitstream.numberOfBitsUsed
 end
+jit.off(raknetBitStreamGetNumberOfBitsUsed, true)
 
 function raknetBitStreamGetNumberOfBytesUsed(bitstream)
     local bits = raknetBitStreamGetNumberOfBitsUsed(bitstream)
     return bit.rshift(bits + 7, 3)
 end
+jit.off(raknetBitStreamGetNumberOfBytesUsed, true)
 
 function raknetBitStreamGetNumberOfUnreadBits(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return bitstream.numberOfBitsAllocated - bitstream.numberOfBitsUsed
 end
+jit.off(raknetBitStreamGetNumberOfUnreadBits, true)
 
 function raknetBitStreamGetWriteOffset(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return bitstream.numberOfBitsUsed
 end
+jit.off(raknetBitStreamGetWriteOffset, true)
 
 function raknetBitStreamGetReadOffset(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return bitstream.readOffset
 end
+jit.off(raknetBitStreamGetReadOffset, true)
 
 function raknetBitStreamGetDataPtr(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     return shared.get_pointer(bitstream.data)
 end
+jit.off(raknetBitStreamGetDataPtr, true)
 
 function raknetNewBitStream()
     local bitstream = bs()
     return shared.get_pointer(bitstream)
 end
+jit.off(raknetNewBitStream, true)
 
 function raknetDeleteBitStream(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:__gc()
 end
+jit.off(raknetDeleteBitStream, true)
 
 function raknetResetBitStream(bitstream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:Reset()
 end
+jit.off(raknetResetBitStream, true)
 
 function raknetBitStreamWriteBool(bitstream, value)
     bitstream = ffi.cast('SBitStream*', bitstream)
     if value then bitstream:Write1()
     else bitstream:Write0() end
 end
+jit.off(raknetBitStreamWriteBool, true)
 
 function raknetBitStreamWriteInt8(bitstream, value)
     local buf = ffi.new('char[1]', value)
     raknetBitStreamWriteBuffer(bitstream, buf, ffi.sizeof(buf))
 end
+jit.off(raknetBitStreamWriteInt8, true)
 
 function raknetBitStreamWriteInt16(bitstream, value)
     local buf = ffi.new('short[1]', value)
     raknetBitStreamWriteBuffer(bitstream, buf, ffi.sizeof(buf))
 end
+jit.off(raknetBitStreamWriteInt16, true)
 
 function raknetBitStreamWriteInt32(bitstream, value)
     local buf = ffi.new('long[1]', value)
     raknetBitStreamWriteBuffer(bitstream, buf, ffi.sizeof(buf))
 end
+jit.off(raknetBitStreamWriteInt32, true)
 
 function raknetBitStreamWriteFloat(bitstream, value)
     local buf = ffi.new('float[1]', value)
     raknetBitStreamWriteBuffer(bitstream, buf, ffi.sizeof(buf))
 end
+jit.off(raknetBitStreamWriteFloat, true)
 
 function raknetBitStreamWriteBuffer(bitstream, dest, size)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:WriteBits(dest, size * 8, true)
 end
+jit.off(raknetBitStreamWriteBuffer, true)
 
 function raknetBitStreamWriteString(bitstream, str)
     local buf = ffi.new('char[?]', #str + 1, str)
     raknetBitStreamWriteBuffer(bitstream, buf, ffi.sizeof(buf) - 1)
 end
+jit.off(raknetBitStreamWriteString, true)
 
 function raknetBitStreamDecodeString(bitstream, size)
     bitstream = ffi.cast('SBitStream*', bitstream)
@@ -169,17 +197,20 @@ function raknetBitStreamDecodeString(bitstream, size)
     buf[size] = 0
     return ffi.string(buf)
 end
+jit.off(raknetBitStreamDecodeString, true)
 
 function raknetBitStreamEncodeString(bitstream, str)
     bitstream = ffi.cast('SBitStream*', bitstream)
     local buf = ffi.new('char[?]', #str + 1, str)
     StringCompressor.Instance():EncodeString(buf, #str, bitstream, 0)
 end
+jit.off(raknetBitStreamEncodeString, true)
 
 function raknetBitStreamWriteBitStream(bitstream, bitStream)
     bitstream = ffi.cast('SBitStream*', bitstream)
     bitstream:Write(bitStream)
 end
+jit.off(raknetBitStreamWriteBitStream, true)
 
 function raknetSendRpcEx(rpc, bs, priority, reliability, channel, timestamp)
     local rakclient = ffi.cast('void***', netgame.m_pRakClient)
@@ -191,6 +222,7 @@ function raknetSendRpcEx(rpc, bs, priority, reliability, channel, timestamp)
     local RPC = ffi.cast('bool(__thiscall *)(void *, int *, SBitStream *, int, int, char, bool)', vtbl[25])
     return RPC(rakclient, rpc, bs, priority, reliability, channel, timestamp)
 end
+jit.off(raknetSendRpcEx, true)
 
 function raknetSendBitStreamEx(bs, priority, reliability, channel)
     local rakclient = ffi.cast('void***', netgame.m_pRakClient)
@@ -201,6 +233,7 @@ function raknetSendBitStreamEx(bs, priority, reliability, channel)
     local Send = ffi.cast('bool(__thiscall *)(void *, SBitStream *, int, int, char)', vtbl[6])
     return Send(rakclient, bs, priority, reliability, channel)
 end
+jit.off(raknetSendBitStreamEx, true)
 
 function raknetSendRpc(rpc, bs)
     return raknetSendRpcEx(rpc, bs, HIGH_PRIORITY, RELIABLE, 0, false)
@@ -420,10 +453,12 @@ end
 function sampGetRakclientInterface()
     return shared.get_pointer(netgame.m_pRakClient)
 end
+jit.off(sampGetRakclientInterface, true)
 
 function sampGetRakpeer()
     return shared.get_pointer(netgame.m_pRakClient) - 0xDDE -- 0xDDE = sizeof(RakPeer)
 end
+jit.off(sampGetRakpeer, true)
 
 function sampSendAimData(data)
     local bs = raknetNewBitStream()

@@ -18,6 +18,7 @@ end
 function sampGetObjectPoolPtr()
     return shared.get_pointer(objectpool())
 end
+jit.off(sampGetObjectPoolPtr, true)
 
 function sampGetObjectHandleBySampId(id)
     if objectpool().m_bNotEmpty[id] == 1 then
@@ -26,6 +27,7 @@ function sampGetObjectHandleBySampId(id)
     end
     return -1
 end
+jit.off(sampGetObjectHandleBySampId, true)
 
 function sampGetObjectSampIdByHandle(object)
     for i = 0, ffi.C.MAX_OBJECTS - 1 do

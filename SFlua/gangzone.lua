@@ -18,3 +18,4 @@ end
 function sampGetGangzonePoolPtr()
     return shared.get_pointer(gangzonepool())
 end
+jit.off(sampGetGangzonePoolPtr, true)

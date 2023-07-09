@@ -21,22 +21,27 @@ local AnimList = ffi.cast('char*', sampapi.GetAddress(AnimList_addr[sampapi.GetS
 function sampGetSampInfoPtr()
     return shared.get_pointer(netgame.RefNetGame())
 end
+jit.off(sampGetSampInfoPtr, true)
 
 function sampGetSampPoolsPtr()
     return shared.get_pointer(netgame.RefNetGame().m_pPools)
 end
+jit.off(sampGetSampPoolsPtr, true)
 
 function sampGetServerSettingsPtr()
     return shared.get_pointer(netgame.RefNetGame().m_pSettings)
 end
+jit.off(sampGetServerSettingsPtr, true)
 
 function sampGetCurrentServerName()
     return ffi.string(netgame.RefNetGame().m_szHostname)
 end
+jit.off(sampGetCurrentServerName, true)
 
 function sampGetCurrentServerAddress()
     return ffi.string(netgame.RefNetGame().m_szHostAddress), netgame.RefNetGame().m_nPort
 end
+jit.off(sampGetCurrentServerAddress, true)
 
 function sampGetGamestate()
     local convert = {
@@ -48,6 +53,7 @@ function sampGetGamestate()
     }
     return convert[netgame.RefNetGame().m_nGameState] or GAMESTATE_NONE
 end
+jit.off(sampGetGamestate, true)
 
 function sampSetGamestate(gamestate)
     local convert = {
@@ -61,12 +67,14 @@ function sampSetGamestate(gamestate)
         netgame.RefNetGame().m_nGameState = convert[gamestate]
     end
 end
+jit.off(sampSetGamestate, true)
 
 function sampGetAnimationNameAndFile(id)
     id = tonumber(id) or 0
     local name, file = ffi.string(AnimList + 36 * id):match('(.*):(.*)')
     return name or '', file or ''
 end
+jit.off(sampGetAnimationNameAndFile, true)
 
 function sampFindAnimationIdByNameAndFile(name, file)
     local filename = ('%s:%s'):format(name, file)
@@ -77,8 +85,8 @@ function sampFindAnimationIdByNameAndFile(name, file)
     end
     return -1
 end
+jit.off(sampFindAnimationIdByNameAndFile, true)
 
--- TODO: add for r3-1/r5
 function sampSetSendrate(type, rate)
     local ref
     if type == ONFOOTSENDRATE then
@@ -93,3 +101,4 @@ function sampSetSendrate(type, rate)
         ref[0] = rate
     end
 end
+jit.off(sampSetSendrate, true)

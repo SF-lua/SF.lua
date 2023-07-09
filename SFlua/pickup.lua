@@ -18,10 +18,12 @@ end
 function sampGetPickupPoolPtr()
     return shared.get_pointer(pickuppool())
 end
+jit.off(sampGetPickupPoolPtr, true)
 
 function sampGetPickupHandleBySampId(id)
     return pickuppool().m_handle[id]
 end
+jit.off(sampGetPickupHandleBySampId, true)
 
 function sampGetPickupSampIdByHandle(handle)
     for i = 0, ffi.C.MAX_PICKUPS - 1 do

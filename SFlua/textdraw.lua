@@ -19,15 +19,18 @@ end
 function sampGetTextdrawPoolPtr()
     return shared.get_pointer(textdrawpool())
 end
+jit.off(sampGetTextdrawPoolPtr, true)
 
 function sampTextdrawIsExists(id)
     return textdrawpool().m_bNotEmpty[id] == 1
 end
+jit.off(sampTextdrawIsExists, true)
 
 function sampTextdrawCreate(id, text, posX, posY)
     local transmit = ffi.new('STransmit[1]', { { m_fX = posX, m_fY = posY } })
     textdrawpool():Create(id, transmit, text)
 end
+jit.off(sampTextdrawCreate, true)
 
 function sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
     if sampTextdrawIsExists(id) then
@@ -38,6 +41,7 @@ function sampTextdrawSetBoxColorAndSize(id, box, color, sizeX, sizeY)
         obj.m_data.m_fBoxSizeY = sizeY
     end
 end
+jit.off(sampTextdrawSetBoxColorAndSize, true)
 
 function sampTextdrawGetString(id)
     if sampTextdrawIsExists(id) then
@@ -45,10 +49,12 @@ function sampTextdrawGetString(id)
         return ffi.string(obj.m_szString)
     end
 end
+jit.off(sampTextdrawGetString, true)
 
 function sampTextdrawDelete(id)
     textdrawpool():Delete(id)
 end
+jit.off(sampTextdrawDelete, true)
 
 function sampTextdrawGetLetterSizeAndColor(id)
     if sampTextdrawIsExists(id) then
@@ -56,6 +62,7 @@ function sampTextdrawGetLetterSizeAndColor(id)
         return obj.m_data.m_fLetterWidth, obj.m_data.m_fLetterHeight, color.abgr_to_argb(obj.m_data.m_letterColor)
     end
 end
+jit.off(sampTextdrawGetLetterSizeAndColor, true)
 
 function sampTextdrawGetPos(id)
     if sampTextdrawIsExists(id) then
@@ -63,6 +70,7 @@ function sampTextdrawGetPos(id)
         return obj.m_data.m_fX, obj.m_data.m_fY
     end
 end
+jit.off(sampTextdrawGetPos, true)
 
 function sampTextdrawGetShadowColor(id)
     if sampTextdrawIsExists(id) then
@@ -70,6 +78,7 @@ function sampTextdrawGetShadowColor(id)
         return obj.m_data.m_nShadow, obj.m_data.m_backgroundColor
     end
 end
+jit.off(sampTextdrawGetShadowColor, true)
 
 function sampTextdrawGetOutlineColor(id)
     if sampTextdrawIsExists(id) then
@@ -77,6 +86,7 @@ function sampTextdrawGetOutlineColor(id)
         return obj.m_data.m_nOutline, obj.m_data.m_backgroundColor
     end
 end
+jit.off(sampTextdrawGetOutlineColor, true)
 
 function sampTextdrawGetStyle(id)
     if sampTextdrawIsExists(id) then
@@ -84,6 +94,7 @@ function sampTextdrawGetStyle(id)
         return obj.m_data.m_nStyle
     end
 end
+jit.off(sampTextdrawGetStyle, true)
 
 function sampTextdrawGetProportional(id)
     if sampTextdrawIsExists(id) then
@@ -91,6 +102,7 @@ function sampTextdrawGetProportional(id)
         return obj.m_data.m_nProportional
     end
 end
+jit.off(sampTextdrawGetProportional, true)
 
 function sampTextdrawGetAlign(id)
     if sampTextdrawIsExists(id) then
@@ -106,6 +118,7 @@ function sampTextdrawGetAlign(id)
         end
     end
 end
+jit.off(sampTextdrawGetAlign, true)
 
 function sampTextdrawGetBoxEnabledColorAndSize(id)
     if sampTextdrawIsExists(id) then
@@ -114,6 +127,7 @@ function sampTextdrawGetBoxEnabledColorAndSize(id)
             obj.m_data.m_fBoxSizeX, obj.m_data.m_fBoxSizeY
     end
 end
+jit.off(sampTextdrawGetBoxEnabledColorAndSize, true)
 
 function sampTextdrawGetModelRotationZoomVehColor(id)
     if sampTextdrawIsExists(id) then
@@ -123,6 +137,7 @@ function sampTextdrawGetModelRotationZoomVehColor(id)
             obj.m_data.m_fZoom, obj.m_data.m_aColor[1], obj.m_data.m_aColor[2]
     end
 end
+jit.off(sampTextdrawGetModelRotationZoomVehColor, true)
 
 function sampTextdrawSetLetterSizeAndColor(id, letSizeX, letSizeY, color)
     if sampTextdrawIsExists(id) then
@@ -132,6 +147,7 @@ function sampTextdrawSetLetterSizeAndColor(id, letSizeX, letSizeY, color)
         obj.m_data.m_letterColor = color
     end
 end
+jit.off(sampTextdrawSetLetterSizeAndColor, true)
 
 function sampTextdrawSetPos(id, posX, posY)
     if sampTextdrawIsExists(id) then
@@ -140,6 +156,7 @@ function sampTextdrawSetPos(id, posX, posY)
         obj.m_data.m_fY = posY
     end
 end
+jit.off(sampTextdrawSetPos, true)
 
 function sampTextdrawSetString(id, str)
     if sampTextdrawIsExists(id) then
@@ -147,6 +164,7 @@ function sampTextdrawSetString(id, str)
         obj.m_szString = str
     end
 end
+jit.off(sampTextdrawSetString, true)
 
 function sampTextdrawSetModelRotationZoomVehColor(id, model, rotX, rotY, rotZ, zoom, clr1, clr2)
     if sampTextdrawIsExists(id) then
@@ -157,6 +175,7 @@ function sampTextdrawSetModelRotationZoomVehColor(id, model, rotX, rotY, rotZ, z
         obj.m_data.sColor = { clr1, clr2 }
     end
 end
+jit.off(sampTextdrawSetModelRotationZoomVehColor, true)
 
 function sampTextdrawSetOutlineColor(id, outline, color)
     if sampTextdrawIsExists(id) then
@@ -165,6 +184,7 @@ function sampTextdrawSetOutlineColor(id, outline, color)
         obj.m_data.m_backgroundColor = color
     end
 end
+jit.off(sampTextdrawSetOutlineColor, true)
 
 function sampTextdrawSetShadow(id, shadow, color)
     if sampTextdrawIsExists(id) then
@@ -173,6 +193,7 @@ function sampTextdrawSetShadow(id, shadow, color)
         obj.m_data.m_backgroundColor = color
     end
 end
+jit.off(sampTextdrawSetShadow, true)
 
 function sampTextdrawSetStyle(id, style)
     if sampTextdrawIsExists(id) then
@@ -180,6 +201,7 @@ function sampTextdrawSetStyle(id, style)
         obj.m_data.m_nStyle = style
     end
 end
+jit.off(sampTextdrawSetStyle, true)
 
 function sampTextdrawSetProportional(id, proportional)
     if sampTextdrawIsExists(id) then
@@ -187,6 +209,7 @@ function sampTextdrawSetProportional(id, proportional)
         obj.m_data.m_nProportional = proportional
     end
 end
+jit.off(sampTextdrawSetProportional, true)
 
 function sampTextdrawSetAlign(id, align)
     if sampTextdrawIsExists(id) then
@@ -203,3 +226,4 @@ function sampTextdrawSetAlign(id, align)
         end
     end
 end
+jit.off(sampTextdrawSetAlign, true)

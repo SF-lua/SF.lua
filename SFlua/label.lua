@@ -23,6 +23,7 @@ end
 function sampGetTextlabelPoolPtr()
     return shared.get_pointer(labelpool())
 end
+jit.off(sampGetTextlabelPoolPtr, true)
 
 function sampCreate3dText(text, color, posX, posY, posZ, distance, ignoreWalls, playerId, vehicleId)
     for i = 0, ffi.C.MAX_TEXT_LABELS - 1 do
@@ -37,6 +38,7 @@ end
 function sampIs3dTextDefined(id)
     return labelpool().m_bNotEmpty[id] == 1
 end
+jit.off(sampIs3dTextDefined, true)
 
 function sampGet3dTextInfoById(id)
     if sampIs3dTextDefined(id) then
@@ -46,6 +48,7 @@ function sampGet3dTextInfoById(id)
             obj.m_fDrawDistance, obj.m_bBehindWalls, obj.m_nAttachedToPlayer, obj.m_nAttachedToVehicle
     end
 end
+jit.off(sampGet3dTextInfoById, true)
 
 function sampSet3dTextString(id, text)
     if sampIs3dTextDefined(id) then
@@ -58,14 +61,17 @@ function sampSet3dTextString(id, text)
         ffi.copy(obj.m_pText, text)
     end
 end
+jit.off(sampSet3dTextString, true)
 
 function sampDestroy3dText(id)
     if sampIs3dTextDefined(id) then
         labelpool():Delete(id)
     end
 end
+jit.off(sampDestroy3dText, true)
 
 function sampCreate3dTextEx(id, text, color, posX, posY, posZ, distance, ignoreWalls, playerId, vehicleId)
     sampDestroy3dText(id) -- if the label exists
     labelpool():Create(id, text, color, { x = posX, y = posY, z = posZ }, distance, ignoreWalls, playerId, vehicleId)
 end
+jit.off(sampCreate3dTextEx, true)

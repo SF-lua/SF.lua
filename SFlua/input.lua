@@ -16,6 +16,7 @@ local registered_cmds = {}
 function sampGetInputInfoPtr()
     return shared.get_pointer(dialog.RefInputBox())
 end
+jit.off(sampGetInputInfoPtr, true)
 
 function sampRegisterChatCommand(cmd, func)
     if input.RefInputBox():GetCommandHandler(cmd) ~= nil then
@@ -29,6 +30,7 @@ function sampRegisterChatCommand(cmd, func)
     registered_cmds[cmd] = true
     return true
 end
+jit.off(sampRegisterChatCommand, true)
 
 function sampUnregisterChatCommand(cmd)
     local ref = input.RefInputBox()
@@ -50,14 +52,17 @@ function sampUnregisterChatCommand(cmd)
     end
     return false
 end
+jit.off(sampUnregisterChatCommand, true)
 
 function sampSetChatInputText(text)
     input.RefInputBox().m_pEditbox:SetText(text)
 end
+jit.off(sampSetChatInputText, true)
 
 function sampGetChatInputText()
     return input.RefInputBox().m_pEditbox:GetText()
 end
+jit.off(sampGetChatInputText, true)
 
 function sampSetChatInputEnabled(enabled)
     if enabled then
@@ -66,10 +71,12 @@ function sampSetChatInputEnabled(enabled)
         input.RefInputBox():Close()
     end
 end
+jit.off(sampSetChatInputEnabled, true)
 
 function sampIsChatInputActive()
     return input.RefInputBox().m_bEnabled == 1
 end
+jit.off(sampIsChatInputActive, true)
 
 function sampIsChatCommandDefined(cmd)
     local ref = input.RefInputBox()
@@ -80,11 +87,13 @@ function sampIsChatCommandDefined(cmd)
     end
     return false
 end
+jit.off(sampIsChatCommandDefined, true)
 
 function sampProcessChatInput(text)
     sampSetChatInputText(text)
     input.RefInputBox():ProcessInput()
 end
+jit.off(sampProcessChatInput, true)
 
 -- unregister commands when unloading the script
 addEventHandler('onScriptTerminate', function (s, quitGame)
