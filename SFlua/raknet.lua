@@ -213,7 +213,7 @@ end
 jit.off(raknetBitStreamWriteBitStream, true)
 
 function raknetSendRpcEx(rpc, bs, priority, reliability, channel, timestamp)
-    local rakclient = ffi.cast('void***', netgame.m_pRakClient)
+    local rakclient = ffi.cast('void***', netgame.RefNetGame().m_pRakClient)
     local vtbl = rakclient[0]
     rpc = ffi.new('int[1]', rpc)
     bs = ffi.cast('SBitStream*', bs)
@@ -225,7 +225,7 @@ end
 jit.off(raknetSendRpcEx, true)
 
 function raknetSendBitStreamEx(bs, priority, reliability, channel)
-    local rakclient = ffi.cast('void***', netgame.m_pRakClient)
+    local rakclient = ffi.cast('void***', netgame.RefNetGame().m_pRakClient)
     local vtbl = rakclient[0]
     bs = ffi.cast('SBitStream*', bs)
 
@@ -451,12 +451,12 @@ function raknetGetPacketName(id)
 end
 
 function sampGetRakclientInterface()
-    return shared.get_pointer(netgame.m_pRakClient)
+    return shared.get_pointer(netgame.RefNetGame().m_pRakClient)
 end
 jit.off(sampGetRakclientInterface, true)
 
 function sampGetRakpeer()
-    return shared.get_pointer(netgame.m_pRakClient) - 0xDDE -- 0xDDE = sizeof(RakPeer)
+    return shared.get_pointer(netgame.RefNetGame().m_pRakClient) - 0xDDE -- 0xDDE = sizeof(RakPeer)
 end
 jit.off(sampGetRakpeer, true)
 
@@ -677,3 +677,24 @@ function sampSendVehicleDestroyed(id)
     raknetSendRpc(RPC_VEHICLEDESTROYED, bs)
     raknetDeleteBitStream(bs)
 end
+
+function sampDisconnectWithReason(reason)
+    local ref = netgame.RefNetGame()
+    local rakclient = ffi.cast('void***', ref.m_pRakClient)
+    local vtbl = rakclient[0]
+
+    -- Disconnect(unsigned int blockDuration, unsigned char orderingChannel = 0)
+    local Disconnect = ffi.cast('void(__thiscall *)(void *, unsigned int, unsigned char)', vtbl[2])
+    Disconnect(rakclient, reason, 0)
+
+    ref:ShutdownForRestart()
+end
+jit.off(sampDisconnectWithReason, true)
+
+function sampConnectToServer(ip, port)
+    local ref = netgame.RefNetGame()
+    ffi.copy(ref.m_szHostAddress, ip)
+    ref.m_nPort = port
+    sampSetGamestate(GAMESTATE_WAIT_CONNECT)
+end
+jit.off(sampConnectToServer, true)

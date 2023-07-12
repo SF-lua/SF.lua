@@ -27,11 +27,9 @@ require 'sflua.vehicle'
 require 'sflua.raknet'
 
 -- TODO:
--- sampConnectToServer
 -- sampHasDialogRespond
 -- sampForcePassengerSyncSeatId
 -- sampForceWeaponsSync
--- sampDisconnectWithReason
 -- sampGetRakclientFuncAddressByIndex
 -- sampGetRpcCallbackByRpcId
 -- sampGetRpcNodeByRpcId
