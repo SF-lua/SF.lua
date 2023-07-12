@@ -3,7 +3,7 @@
 
 SF.lua is a lua library for [MoonLoader](https://www.blast.hk/moonloader) that interaction with SA:MP. This library doesn't replace all [SAMPFUNCS](https://www.blast.hk/sampfuncs), it just adds new functions for the Lua script.
 
-Version: v1.0-beta.
+Version: v1.1-beta.
 
 ## Progress
 At the moment, SF.lua doens't have all the functionality of SAMPFUNCS:
