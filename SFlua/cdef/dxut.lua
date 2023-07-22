@@ -33,7 +33,7 @@ local CDXUTEditBox_SetText_addr = {
 }
 
 local CDXUTEditBox_mt = {
-    GetText = ffi.cast('const char*(__thiscall*)(struct CDXUTIMEEditBox*)', sampapi.GetAddress(CDXUTEditBox_GetText_addr[sampapi.GetSAMPVersion()])),
-    SetText = ffi.cast('void(__thiscall*)(struct CDXUTIMEEditBox*, const char *, bool)', sampapi.GetAddress(CDXUTEditBox_SetText_addr[sampapi.GetSAMPVersion()])),
+    GetText = ffi.cast('const char*(__thiscall*)(struct CDXUTEditBox*)', sampapi.GetAddress(CDXUTEditBox_GetText_addr[sampapi.GetSAMPVersion()])),
+    SetText = ffi.cast('void(__thiscall*)(struct CDXUTEditBox*, const char *, bool)', sampapi.GetAddress(CDXUTEditBox_SetText_addr[sampapi.GetSAMPVersion()])),
 }
 mt.set_handler('struct CDXUTEditBox', '__index', CDXUTEditBox_mt)

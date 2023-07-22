@@ -55,7 +55,7 @@ end
 jit.off(sampUnregisterChatCommand, true)
 
 function sampSetChatInputText(text)
-    input.RefInputBox().m_pEditbox:SetText(text)
+    input.RefInputBox().m_pEditbox:SetText(text, false)
 end
 jit.off(sampSetChatInputText, true)
 
